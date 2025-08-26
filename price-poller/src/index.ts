@@ -1,12 +1,14 @@
 import WebSocket from "ws";
 import { Client } from 'pg';
-const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade`;
 import format from "pg-format";
 import dotenv from 'dotenv';
+import { createClient } from "redis";
 
 dotenv.config()
 
-const batch_size = 10;
+const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade`;
+
+const batch_size = 100;
 let batch: [string, string, string, number][] = [];
 
 const client = new Client({
@@ -17,6 +19,18 @@ const client = new Client({
   database: "xness",
 });
 
+const redis = createClient({ 
+  url: 'redis://localhost:6379' 
+})
+
+async function startServer() {
+    await redis.connect();
+    console.log("redis connected")
+    console.log("ws server running")
+}
+
+startServer().catch(console.error)
+
 await client.connect();
 console.log("connected to db");
 
@@ -26,9 +40,9 @@ ws.on("open", () => {
   console.log("connected");
 });
 
-ws.onmessage = async (event) => {
-    const data = event.data.toString()
-    const parseData = JSON.parse(data)
+ws.on("message",async (event) => {
+    const data = event.toString();
+	  const parseData = JSON.parse(data);
     const ts = new Date(parseData.data.T).toISOString().replace("T", " ").replace("Z", "");
 
     batch.push([ts, parseData.data.s, parseData.data.p, parseData.data.q]);
@@ -43,6 +57,13 @@ ws.onmessage = async (event) => {
       console.log(batch.toString())
       batch = [];
     }
-
-};
+    await redis.publish(
+      "trades",
+      JSON.stringify({
+        timestamp: ts,
+        asset: parseData.data.s,
+        price: parseFloat(parseData.data.p),
+      })
+    );
+});
 
