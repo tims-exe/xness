@@ -1,47 +1,93 @@
-"use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const pg_1 = require("pg");
-const dotenv_1 = __importDefault(require("dotenv"));
-const cors_1 = __importDefault(require("cors"));
-dotenv_1.default.config();
-const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
-const pool = new pg_1.Pool({
+import express from 'express';
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import { createClient } from 'redis';
+dotenv.config();
+const app = express();
+app.use(cors());
+app.use(express.json());
+const pool = new Pool({
     user: "postgres",
     host: "localhost",
     database: "xness",
     password: process.env.DB_PASSWORD,
     port: 5432,
 });
+const subscriber = createClient();
+await subscriber.connect();
+const Assets = {
+    "BTCUSDT": 0,
+    "SOLUSDT": 0,
+    "ETHUSDT": 0
+};
+await subscriber.subscribe("trades", (message) => {
+    const latestTrade = JSON.parse(message);
+    Assets[latestTrade.asset] = latestTrade.price;
+    // console.log(Assets)
+});
+const Users = [
+    {
+        id: 1,
+        username: "abcde",
+        balance: 5000.00
+    }
+];
 // /api/trades/BTCUSDT/5
-// TODO: zod validation
-app.get("/api/trades/:asset/:time", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/trades/:asset/:time", async (req, res) => {
     const { asset, time } = req.params;
     console.log(`GET: /api/trades/${asset}/${time}`);
     const table = `trades_${time}`;
     try {
         const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp ASC`;
-        const { rows } = yield pool.query(query, [asset]);
+        const { rows } = await pool.query(query, [asset]);
         return res.json(rows);
     }
     catch (error) {
         console.error(error);
         return res.status(500).json({ error: "db query failed" });
     }
-}));
+});
+app.get("/api/get-balance/:id", (req, res) => {
+    const id = Number(req.params.id);
+    console.log(`GET: /api/get-balance/${id}`);
+    const user = Users.find(u => u.id === id);
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ balance: user.balance });
+});
+// open order (buy/sell)
+app.post("/api/open/:id", async (req, res) => {
+    console.log("POST: /api/open");
+    const id = Number(req.params.id);
+    // TODO: zod validation
+    const { type, quantity, asset } = req.body;
+    const value = Assets[asset];
+    const price = quantity * value;
+    const user = Users.find(u => u.id === id);
+    if (!user) {
+        return res.json({
+            message: "no user found"
+        });
+    }
+    let userBalance = user.balance;
+    if (userBalance < price) {
+        return res.json({
+            message: "insufficient balance"
+        });
+    }
+    userBalance -= price;
+    if (type === "Buy") {
+        return res.json({
+            balance: userBalance,
+        });
+    }
+    // else for sell
+    return res.json({
+        message: "error"
+    });
+});
 app.listen(3000, () => {
     console.log("http backend running");
 });
