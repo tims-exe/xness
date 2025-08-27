@@ -17,7 +17,7 @@ const Prices = ({assetMap, changeAsset} : PriceProps) => {
   }
 
   return (
-    <div>
+    <div className="">
       <div className="mt-5 ml-3 flex justify-between items-center">
         <p className="font-bold text-2xl">Assets</p>
         <div className="flex w-[260px] justify-center gap-20 font-semibold self-end text-lg">

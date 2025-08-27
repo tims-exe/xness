@@ -13,3 +13,11 @@ export interface TradeData {
     low_price: number 
     volume: string
 }
+
+export interface ActiveTradeType {
+    asset: string
+    type: "Buy" | "Sell"
+    volume: number
+    open_price: number 
+    current_price: number 
+}

@@ -2,10 +2,11 @@ import { useState } from "react"
 
 interface TradeSectionProp {
     handleOrder : (volume: number) => void
+    errorMsg: string
 }
 
 
-const TradeSection = ({handleOrder} : TradeSectionProp) => {
+const TradeSection = ({handleOrder, errorMsg} : TradeSectionProp) => {
   const [volume, setVolume] = useState("");
 
   return (
@@ -21,10 +22,21 @@ const TradeSection = ({handleOrder} : TradeSectionProp) => {
         <div className="flex gap-5 items-center font-semibold">
             <p>Volume</p>
             <input 
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9]*\.?[0-9]*"
             value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-            type="text" className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" />
+            onChange={(e) => {
+                const val = e.target.value;
+                if (/^\d*\.?\d*$/.test(val)) {
+                setVolume(val);
+                }
+            }}
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" />
         </div>
+        <p className="self-end mt-2 text-sm text-red-600">
+            {errorMsg}
+        </p>
         <div className="mx-10">
             <button onClick={() => {
                 handleOrder(Number(volume))

@@ -21,7 +21,7 @@ const Assets = {
     "SOLUSDT": 0,
     "ETHUSDT": 0
 };
-const spread = 0.05;
+const spread = 0.025;
 const halfSpread = spread / 2;
 await subscriber.subscribe("trades", (message) => {
     const latestTrade = JSON.parse(message);
@@ -65,8 +65,9 @@ app.post("/api/open/:id", async (req, res) => {
     const id = Number(req.params.id);
     // TODO: zod validation
     const { type, quantity, asset } = req.body;
-    const value = Assets[asset] * (1 + halfSpread);
-    const price = quantity * value;
+    const ask = Assets[asset] * (1 + halfSpread);
+    const bid = Assets[asset] * (1 - halfSpread);
+    const price = quantity * ask;
     console.log(quantity);
     const user = Users.find(u => u.id === id);
     if (!user) {
@@ -82,9 +83,16 @@ app.post("/api/open/:id", async (req, res) => {
         });
     }
     userBalance -= price;
+    console.log({
+        balance: userBalance,
+        open_price: ask,
+        current_price: bid
+    });
     if (type === "Buy") {
         return res.json({
             balance: userBalance,
+            open_price: ask,
+            current_price: bid
         });
     }
     // else for sell

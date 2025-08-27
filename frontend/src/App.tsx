@@ -1,12 +1,14 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react'
 import './App.css'
 import ChartView from './components/ChartView'
 import Navbar from './components/Navbar'
 import Prices from './components/Prices'
-import type { AssetData, TradeData } from './types/main-types'
+import type { ActiveTradeType, AssetData, TradeData } from './types/main-types'
 import axios from 'axios'
 import TradeSection from './components/TradeSection'
 import { useSocket } from './hooks/useSocket'
+import ActiveTrades from './components/ActiveTrades'
 
 const App = () => {
   const [trades, setTrades] = useState<TradeData[]>();
@@ -17,7 +19,13 @@ const App = () => {
   const { socket, loading } = useSocket();
   const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
   const [openTrade, setOpenTrade] = useState<boolean>(false)
+  const [errorMsg, setErrorMsg] = useState("");
   const [vol, setVol] = useState(0);
+  const [tradeType, setTradeType] = useState<"Buy"| "Sell">("Buy");
+  const [activeTrades, setActiveTrades] = useState<ActiveTradeType[]>([]);
+  const [currentPrice, setCurrentPrice] = useState<number>();
+
+  // const ActiveTrades: ActiveTradeType[] = [];
 
   const userId = 1;
   const spread = 0.025
@@ -73,6 +81,7 @@ const App = () => {
       const positionValue = currentBid * vol 
 
       setDisplayBalance(balance + positionValue)
+      setCurrentPrice(currentBid);
     }
   }, [assetMap, openTrade, vol, asset]);
 
@@ -86,7 +95,7 @@ const App = () => {
 
   const executeOrder = async (volume: number) => {
     const body = {
-      type: "Buy",
+      type: tradeType,
       quantity: volume,
       asset: asset,
     }
@@ -96,26 +105,49 @@ const App = () => {
     const response = await axios.post(`${BACKEND_URL}/api/open/${userId}`, body)
 
     const data = response.data;
-    console.log(data)
+
+    if (data.message) {
+      setErrorMsg(data.message)
+      return
+    }
     setBalance(data.balance)
+    setErrorMsg("")
     setOpenTrade(true)
     setVol(volume);
+    setCurrentPrice(data.current_price)
+
+    const currentTrade: ActiveTradeType = {
+      asset: asset,
+      type: tradeType,
+      open_price: data.open_price,
+      current_price: data.current_price,
+      volume: volume
+    }
+
+    setActiveTrades((prev) => [...prev, currentTrade])
+    // ActiveTrades.push()
   }
 
   return (
     <div className="flex flex-col h-screen">
       <Navbar balance={displayBalance} />
       <div className='flex'>
-        <div className="w-1/4 p-4">
+        <div className="w-2/6 p-4">
           <Prices assetMap={assetMap} changeAsset={changeAsset} />
         </div>
-        <div className="w-2/4">
-          {trades ? <ChartView
-            trades={trades} asset={asset} loading={loading} selectedTimePeriod={selectedTimePeriod} onTimePeriodChange={changeTimePeriod}
-          /> : <p>no trades</p>}
-        </div>
-        <div className='w-1/4'>
-          <TradeSection handleOrder={executeOrder} />
+        <div className="w-0.5 bg-neutral-300"></div>
+        <div className='w-4/6'>  
+          <div className='flex'>  
+            <div className="flex-2">
+              {trades ? <ChartView
+                trades={trades} asset={asset} loading={loading} selectedTimePeriod={selectedTimePeriod} onTimePeriodChange={changeTimePeriod}
+              /> : <p>no trades</p>}
+            </div>
+            <div className='flex-1'>
+              <TradeSection handleOrder={executeOrder} errorMsg={errorMsg}/>
+            </div>
+          </div>
+          <ActiveTrades trades={activeTrades} currentPrice={currentPrice}/>
         </div>
       </div>
     </div>
