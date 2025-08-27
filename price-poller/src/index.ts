@@ -6,7 +6,7 @@ import { createClient } from "redis";
 
 dotenv.config()
 
-const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade`;
+const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethusdt@aggTrade/solusdt@aggTrade`;
 
 const batch_size = 100;
 let batch: [string, string, string, number][] = [];
@@ -46,6 +46,8 @@ ws.on("message",async (event) => {
     const ts = new Date(parseData.data.T).toISOString().replace("T", " ").replace("Z", "");
 
     batch.push([ts, parseData.data.s, parseData.data.p, parseData.data.q]);
+
+    // console.log(parseData)
 
     if (batch.length >= batch_size) {
       const query = format(
