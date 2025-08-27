@@ -10,29 +10,16 @@ interface PriceProps {
 const Prices = ({changeAsset} : PriceProps) => {
   const { socket, loading } = useSocket();
   const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
-  const [priceColor, setPriceColour] = useState("text-green-600");
 
   useEffect(() => {
     if (socket && !loading) {
       socket.onmessage = (event) => {
         const assetData: AssetData = JSON.parse(event.data);
 
-        setAssetMap((prev) => {
-          const prevAsset = prev[assetData.asset];
-
-          if (prevAsset) {
-            if (assetData.price < prevAsset.price) {
-              setPriceColour("text-red-600");
-            } else {
-              setPriceColour("text-green-600");
-            }
-          }
-
-          return {
+        setAssetMap((prev) => ({
             ...prev,
-            [assetData.asset]: assetData,
-          };
-        });
+            [assetData.asset]: assetData
+        }));
       };
       socket.onclose = () => {
         console.log("close");
@@ -51,7 +38,13 @@ const Prices = ({changeAsset} : PriceProps) => {
 
   return (
     <div>
-      <p className="mt-5 ml-3 font-bold text-2xl">Assets</p>
+      <div className="mt-5 ml-3 flex justify-between items-center">
+        <p className="font-bold text-2xl">Assets</p>
+        <div className="flex w-[260px] justify-center gap-20 font-semibold self-end text-lg">
+            <p>Ask</p>
+            <p>Bid</p>
+        </div>
+      </div>
       {assets.length ? (
         assets.map((a) => (
           <button
@@ -61,7 +54,7 @@ const Prices = ({changeAsset} : PriceProps) => {
             }}
             className="hover:cursor-pointer w-full hover:shadow-lg rounded-2xl mt-5 transition-shadow duration-300"
           >
-            <AssetCard asset={a} color={priceColor} />
+            <AssetCard asset={a}/>
           </button>
         ))
       ) : (
