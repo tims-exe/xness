@@ -1,6 +1,5 @@
 import WebSocket from "ws";
 import { Client } from 'pg';
-import format from "pg-format";
 import dotenv from 'dotenv';
 import { createClient } from "redis";
 dotenv.config();
@@ -36,9 +35,12 @@ ws.on("message", async (event) => {
     batch.push([ts, parseData.data.s, parseData.data.p, parseData.data.q]);
     // console.log(parseData)
     if (batch.length >= batch_size) {
-        const query = format("INSERT INTO trades (time, asset, price, quantity) VALUES %L", batch);
-        await client.query(query);
-        console.log(batch.toString());
+        // const query = format(
+        //   "INSERT INTO trades (time, asset, price, quantity) VALUES %L",
+        //   batch
+        // );
+        // await client.query(query);
+        // console.log(batch.toString())
         batch = [];
     }
     await redis.publish("trades", JSON.stringify({

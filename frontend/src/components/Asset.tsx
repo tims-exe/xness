@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react"
 import type { AssetData } from "../types/main-types"
 
@@ -13,8 +14,8 @@ const AssetCard = ({ asset }: {
       const prevAsk = ask
       const prevBid = bid
       
-      const currentAsk = asset.price + (asset.price * 0.05)
-      const currentBid = asset.price - (asset.price * 0.05)
+      const currentAsk = asset.price * 1.05
+      const currentBid = asset.price * 0.95
       
       if (prevAsk !== undefined) {
         setAskColor(currentAsk > prevAsk ? "bg-green-300" : "bg-red-300")

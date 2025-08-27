@@ -50,13 +50,13 @@ ws.on("message",async (event) => {
     // console.log(parseData)
 
     if (batch.length >= batch_size) {
-      const query = format(
-        "INSERT INTO trades (time, asset, price, quantity) VALUES %L",
-        batch
-      );
-      await client.query(query);
+      // const query = format(
+      //   "INSERT INTO trades (time, asset, price, quantity) VALUES %L",
+      //   batch
+      // );
+      // await client.query(query);
 
-      console.log(batch.toString())
+      // console.log(batch.toString())
       batch = [];
     }
     await redis.publish(

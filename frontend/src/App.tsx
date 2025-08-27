@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import Prices from './components/Prices'
 import type { TradeData } from './types/main-types'
 import axios from 'axios'
+import TradeSection from './components/TradeSection'
 
 
 
@@ -20,8 +21,6 @@ const App = () => {
       //     "ETHUSDT"
       // ];
       
-
-  
       useEffect(() => {
           const fetchTrades = async () => {
               try {
@@ -49,13 +48,16 @@ const App = () => {
     <div className="flex flex-col h-screen">
       <Navbar />
         <div className='flex'>
-          <div className="w-1/3 p-4">
+          <div className="w-1/4 p-4">
             <Prices changeAsset={changeAsset}/>
           </div>
-          <div className="w-2/3">
+          <div className="w-2/4">
             {trades ? <ChartView 
               trades={trades} asset={asset} loading={loading} selectedTimePeriod={selectedTimePeriod} onTimePeriodChange={changeTimePeriod}
               /> : <p>no trades</p>} 
+          </div>
+          <div className='w-1/4'>
+            <TradeSection />
           </div>
         </div>
     </div>
