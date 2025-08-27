@@ -28,6 +28,9 @@ const Assets: Record<string, number> = {
     "ETHUSDT" : 0
 } 
 
+const spread = 0.025
+const halfSpread = spread / 2
+
 await subscriber.subscribe("trades", (message) => {
     const latestTrade = JSON.parse(message)
 
@@ -41,7 +44,7 @@ const Users = [
     {
         id: 1,
         username: "abcde",
-        balance: 5000.00
+        balance: 10000.00
     }
 ]
 
@@ -90,9 +93,9 @@ app.post("/api/open/:id", async (req, res) => {
     // TODO: zod validation
     const { type, quantity, asset } = req.body;
 
-    const value = Assets[asset]
+    const value = Assets[asset] * (1 + halfSpread)
     const price = quantity * value
-
+    console.log(quantity)
     const user = Users.find(u => u.id === id)
 
     if (!user) {
@@ -102,7 +105,7 @@ app.post("/api/open/:id", async (req, res) => {
     }
 
     let userBalance = user.balance;
-
+    console.log(userBalance)
     if (userBalance < price) {
         return res.json({
             message: "insufficient balance"
@@ -110,6 +113,7 @@ app.post("/api/open/:id", async (req, res) => {
     }
 
     userBalance -= price;
+    
     if (type === "Buy") {
         return res.json({
             balance : userBalance,

@@ -1,34 +1,14 @@
-import { useEffect, useState } from "react";
-import { useSocket } from "../hooks/useSocket";
+// import { useEffect, useState } from "react";
+// import { useSocket } from "../hooks/useSocket";
 import AssetCard from "./Asset";
 import type { AssetData } from "../types/main-types";
 
 interface PriceProps {
+    assetMap: Record<string, AssetData>,
     changeAsset: (asset: string) => void
 }
 
-const Prices = ({changeAsset} : PriceProps) => {
-  const { socket, loading } = useSocket();
-  const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
-
-  useEffect(() => {
-    if (socket && !loading) {
-      socket.onmessage = (event) => {
-        const assetData: AssetData = JSON.parse(event.data);
-
-        setAssetMap((prev) => ({
-            ...prev,
-            [assetData.asset]: assetData
-        }));
-      };
-      socket.onclose = () => {
-        console.log("close");
-      };
-      return () => {
-        socket.close();
-      };
-    }
-  }, [socket, loading]);
+const Prices = ({assetMap, changeAsset} : PriceProps) => {
 
   const assets = Object.values(assetMap);
 

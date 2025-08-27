@@ -13,22 +13,25 @@ const AssetCard = ({ asset }: {
     useEffect(() => {
       const prevAsk = ask
       const prevBid = bid
-      
-      const currentAsk = asset.price * 1.05
-      const currentBid = asset.price * 0.95
-      
+
+      const spread = 0.025
+      const halfSpread = spread / 2
+
+      const currentAsk = asset.price * (1 + halfSpread)
+      const currentBid = asset.price * (1 - halfSpread)
+
       if (prevAsk !== undefined) {
         setAskColor(currentAsk > prevAsk ? "bg-green-300" : "bg-red-300")
       }
-      
+
       if (prevBid !== undefined) {
         setBidColor(currentBid > prevBid ? "bg-green-300" : "bg-red-300")
       }
-      
+
       setAsk(currentAsk)
       setBid(currentBid)
-
     }, [asset.price])
+
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-between">
