@@ -2,6 +2,9 @@ export const Users = [
     {
         id: 1,
         username: "abcde",
-        balance: 10000.00
+        password: "123",
+        balances: {
+            "USD": 10000
+        }
     }
 ];

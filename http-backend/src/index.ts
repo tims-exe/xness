@@ -73,7 +73,7 @@ app.get("/api/get-balance/:id", (req, res) => {
     return res.status(404).json({ error: "User not found" });
   }
 
-  res.json({ balance: user.balance });
+  res.json({ balance: user.balances.USD });
 });
 
 
@@ -98,7 +98,7 @@ app.post("/api/open/:id", async (req, res) => {
         })
     }
 
-    let userBalance = user.balance;
+    let userBalance = user.balances.USD;
     console.log(userBalance)
     if (userBalance < price) {
         return res.json({
