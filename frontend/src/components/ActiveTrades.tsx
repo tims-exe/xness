@@ -1,4 +1,3 @@
-// ActiveTrades.tsx
 import type { ActiveTradeType } from "../types/main-types"
 
 const ActiveTrades = ({ trades, closeOrder }: {
@@ -6,9 +5,20 @@ const ActiveTrades = ({ trades, closeOrder }: {
   closeOrder : (orderId: number) => void
 }) => {
   return (
-    <div className="mt-10 mx-5">
+    <div className="mt-5 mx-5">
       {trades.length > 0 ? (
         <div>
+          {/* Header row */}
+          <div className="w-full rounded-xl px-5 flex mb-2 font-semibold">
+            <p className="flex-1">Asset</p>
+            <p className="flex-1">Type</p>
+            <p className="flex-1">Open Price</p>
+            <p className="flex-1">Current Price</p>
+            <p className="flex-1">Profit/Loss</p>
+            <p className="flex-0.5 text-center">Close</p>
+          </div>
+          
+          {/* Trade rows */}
           {trades.map((trade, index) => {
             const colour = trade.pnl < 0 ? 'text-red-600' : 'text-green-600'
             return (

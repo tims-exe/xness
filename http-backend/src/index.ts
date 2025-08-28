@@ -153,7 +153,7 @@ app.post("/api/open/", async (req, res) => {
     }
 
     const freeMargin = user.balances.USD - user.usedMargin
-
+    console.log(freeMargin, margin, freeMargin < margin)
     //console.log(user.balances.USD)
     if (freeMargin < margin) {
         return res.json({
