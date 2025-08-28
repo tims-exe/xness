@@ -21,9 +21,10 @@ const App = () => {
   const [openTrade, setOpenTrade] = useState<boolean>(false)
   const [errorMsg, setErrorMsg] = useState("");
   const [vol, setVol] = useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [tradeType, setTradeType] = useState<"Buy"| "Sell">("Buy");
   const [activeTrades, setActiveTrades] = useState<ActiveTradeType[]>([]);
-  const [currentPrice, setCurrentPrice] = useState<number>();
+  const [currentPrice, setCurrentPrice] = useState<number>(0);
 
   // const ActiveTrades: ActiveTradeType[] = [];
 
