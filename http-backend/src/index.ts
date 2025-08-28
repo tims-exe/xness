@@ -117,7 +117,7 @@ app.get("/api/get-orders/:id", (req, res) => {
             type: trade.type,
             volume: trade.volume,
             open_price: trade.openPrice,
-            current_price: assetData.bid,
+            current_price: trade.type === "Buy" ? assetData.bid : assetData.ask,
             pnl: trade.type === "Buy" 
             ? (assetData.bid - trade.openPrice) * trade.volume
             : (trade.openPrice - assetData.ask) * trade.volume

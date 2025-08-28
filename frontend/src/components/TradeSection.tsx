@@ -5,10 +5,33 @@ interface TradeSectionProp {
     errorMsg: string
 }
 
-
 const TradeSection = ({handleOrder, errorMsg} : TradeSectionProp) => {
   const [volume, setVolume] = useState("");
   const [leverage, setLeverage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    if (!volume || !leverage) {
+      return; 
+    }
+    
+    const volumeNum = Number(volume);
+    const leverageNum = Number(leverage);
+    
+    // Validate numbers
+    if (isNaN(volumeNum) || isNaN(leverageNum) || volumeNum <= 0 || leverageNum <= 0) {
+      return; 
+    }
+    
+    setIsLoading(true);
+    try {
+      await handleOrder(volumeNum, leverageNum);
+    } catch (error) {
+      console.error("Error executing order:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col mr-10 mt-10 ">
@@ -33,7 +56,9 @@ const TradeSection = ({handleOrder, errorMsg} : TradeSectionProp) => {
                     setVolume(val);
                 }
             }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" />
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" 
+            placeholder="Enter volume"
+            />
         </div>
         <p className="self-end mt-2 text-sm text-red-600">
             {errorMsg}
@@ -51,14 +76,21 @@ const TradeSection = ({handleOrder, errorMsg} : TradeSectionProp) => {
                     setLeverage(val);
                 }
             }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" />
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3" 
+            placeholder="Enter leverage"
+            />
         </div>
         <div className="mx-10">
-            <button onClick={() => {
-                handleOrder(Number(volume), Number(leverage))
-            }}
-            className=" bg-green-300 py-3 rounded-2xl mt-10 w-full hover:cursor-pointer hover:shadow-xl transition-all duration-300">
-                Confirm
+            <button 
+            onClick={handleConfirm}
+            disabled={isLoading || !volume || !leverage}
+            className={`py-3 rounded-2xl mt-10 w-full transition-all duration-300 ${
+              isLoading || !volume || !leverage 
+                ? 'bg-gray-300 cursor-not-allowed' 
+                : 'bg-green-300 hover:cursor-pointer hover:shadow-xl'
+            }`}
+            >
+                {isLoading ? 'Processing...' : 'Confirm'}
             </button>
         </div>
     </div>
