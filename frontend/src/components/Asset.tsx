@@ -38,10 +38,10 @@ const AssetCard = ({ asset }: {
         <p className="text-md font-semibold">{asset.asset}</p>
         <div className="flex gap-3 ">
           <div className={`text-md font-bold ${askColor} w-[100px] rounded-md`}>
-            {ask?.toFixed(3)}
+            {asset.ask?.toFixed(3)}
           </div>
           <div className={`text-md font-bold ${bidColor} w-[100px] rounded-md`}>
-            {bid?.toFixed(3)}
+            {asset.bid?.toFixed(3)}
           </div>
         </div>
     </div>

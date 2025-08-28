@@ -2,6 +2,8 @@ export interface AssetData {
     timestamp: string
     asset: string 
     price: number
+    ask: number 
+    bid: number
 }
 
 export interface TradeData {
@@ -15,9 +17,10 @@ export interface TradeData {
 }
 
 export interface ActiveTradeType {
+    orderId: number
     asset: string
     type: "Buy" | "Sell"
     volume: number
     open_price: number 
-    current_price: number 
+    current_price: number
 }

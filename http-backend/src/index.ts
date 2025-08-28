@@ -78,6 +78,44 @@ app.get("/api/get-balance/:id", (req, res) => {
 });
 
 
+
+
+app.get("/api/get-orders/:id", (req, res) => {
+  const id = Number(req.params.id)
+
+  console.log(`GET: /api/get-orders/${id}`)
+
+  const user = Users.find(u => u.id === id);
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  if (OpenTrades.length > 0) {
+    const activeTrades = OpenTrades.map(trade => {
+        const assetData = Assets[trade.asset]
+
+        return {
+            orderId: trade.orderId,
+            asset: trade.asset,
+            type: trade.type,
+            volume: trade.volume,
+            open_price: trade.openPrice,
+            current_price: assetData.bid
+        }
+    })
+    console.log(activeTrades)
+    return res.json(activeTrades)
+  }
+
+  return res.json({
+    message: ""
+  })
+
+});
+
+
+
 // open order (buy/sell)
 app.post("/api/open/:id", async (req, res) => {
     console.log("POST: /api/open");
@@ -113,7 +151,9 @@ app.post("/api/open/:id", async (req, res) => {
             orderId : openTradeId,
             volume : volume,
             margin : margin,
-            openPrice: Assets[asset].ask
+            openPrice: Assets[asset].ask,
+            asset: asset,
+            type: type
         })
 
         console.log(OpenTrades)

@@ -1,3 +1,5 @@
+import { OpenTradesTypes } from "./types";
+
 export const Users = [
     {
         id: 1,
@@ -28,10 +30,4 @@ export const Assets: Record<string, Record<string, number>> = {
     }
 } 
 
-interface OpenTradesTypes {
-    orderId: number 
-    volume: number 
-    margin: number
-    openPrice: number
-}
 export const OpenTrades: OpenTradesTypes[] = []
