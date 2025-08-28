@@ -23,4 +23,5 @@ export interface ActiveTradeType {
     volume: number
     open_price: number 
     current_price: number
+    pnl: number
 }

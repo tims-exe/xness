@@ -5,6 +5,7 @@ export interface AssetData {
 }
 
 export interface OpenTradesTypes {
+    userId: number
     orderId: number 
     volume: number 
     margin: number

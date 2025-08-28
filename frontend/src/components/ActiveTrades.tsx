@@ -1,17 +1,16 @@
 // ActiveTrades.tsx
-import type { ActiveTradeType, AssetData } from "../types/main-types"
+import type { ActiveTradeType } from "../types/main-types"
 
-const ActiveTrades = ({ trades, assetMap }: {
+const ActiveTrades = ({ trades, closeOrder }: {
   trades: ActiveTradeType[]
-  assetMap: Record<string, AssetData>
+  closeOrder : (orderId: number) => void
 }) => {
   return (
     <div className="mt-10 mx-5">
       {trades.length > 0 ? (
         <div>
           {trades.map((trade, index) => {
-            const liveData = assetMap[trade.asset];
-            const currentPrice = liveData ? liveData.bid : trade.current_price; 
+            const colour = trade.pnl < 0 ? 'text-red-600' : 'text-green-600'
             return (
               <div
                 key={index}
@@ -20,8 +19,10 @@ const ActiveTrades = ({ trades, assetMap }: {
                 <p className="flex-1">{trade.asset}</p>
                 <p className="flex-1">{trade.type}</p>
                 <p className="flex-1">{trade.open_price.toFixed(3)}</p>
-                <p className="flex-1">{currentPrice.toFixed(3)}</p>
-                <button className="flex-0.5 bg-red-300 px-3 rounded-md hover:cursor-pointer hover:bg-red-400 transition-all duration-200">
+                <p className="flex-1">{trade.current_price.toFixed(3)}</p>
+                <p className={`flex-1 ${colour}`}>{trade.pnl.toFixed(2)}</p>
+                <button onClick={() => closeOrder(trade.orderId)}
+                className="flex-0.5 bg-red-300 px-3 rounded-md hover:cursor-pointer hover:bg-red-400 transition-all duration-200">
                   X
                 </button>
               </div>

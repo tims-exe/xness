@@ -11,7 +11,7 @@ const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethus
 const batch_size = 100;
 let batch: [string, string, string, number][] = [];
 
-const spread = 0.05
+const spread = 0.025
 const halfSpread = spread / 2
 
 const client = new Client({

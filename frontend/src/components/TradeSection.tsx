@@ -22,7 +22,7 @@ const TradeSection = ({handleOrder, errorMsg} : TradeSectionProp) => {
         </div>
         <div className="flex gap-5 items-center font-semibold">
             <p>Volume</p>
-            <input 
+            <input  
             type="text"
             inputMode="decimal"
             pattern="[0-9]*\.?[0-9]*"

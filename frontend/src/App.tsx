@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react'
 import './App.css'
 import ChartView from './components/ChartView'
@@ -14,24 +13,17 @@ const App = () => {
   const [trades, setTrades] = useState<TradeData[]>();
   const [asset, setAsset] = useState("BTCUSDT");
   const [selectedTimePeriod, setSelectedTimePeriod] = useState('1m')
-  const [balance, setBalance] = useState(10000);
-  const [displayBalance, setDisplayBalance] = useState(10000);
+  const [balance, setBalance] = useState<number>(0)
+  const [originalBalance, setOriginalBalance] = useState<number>(0);
   const { socket, loading } = useSocket();
   
-  const [openTrade, setOpenTrade] = useState<boolean>(false)
+  const [isTradeLiv, setIsTradeLive] = useState<boolean>(false)
   const [errorMsg, setErrorMsg] = useState("");
-  const [vol, setVol] = useState(0);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [tradeType, setTradeType] = useState<"Buy"| "Sell">("Buy");
   const [activeTrades, setActiveTrades] = useState<ActiveTradeType[]>([]);
-//   const [currentPrice, setCurrentPrice] = useState<number>(0);
-//   const [bid, setBid] = useState<number>();
-
-  // const ActiveTrades: ActiveTradeType[] = [];
-
+  
   const userId = 1;
-//   const spread = 0.025
-//   const halfSpread = spread / 2
 
   const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
 
@@ -55,23 +47,33 @@ const App = () => {
   // fetch initial balance and orders
   useEffect(() => {
     const fetchData = async () => {
-      const response_balance = await axios.get(`${BACKEND_URL}/api/get-balance/${userId}`)
-      const response_orders = await axios.get(`${BACKEND_URL}/api/get-orders/${userId}`)
+      try {
+        const response_balance = await axios.get(`${BACKEND_URL}/api/get-balance/${userId}`)
+        const response_orders = await axios.get(`${BACKEND_URL}/api/get-orders/${userId}`)
 
-    //   console.log(response_orders.data);
-
-      setActiveTrades(response_orders.data)
-      
-      setBalance(response_balance.data.balance)
+        if (response_orders.data?.length > 0) {
+          setIsTradeLive(true)
+        }
+        setActiveTrades(response_orders.data || [])
+        
+        setBalance(response_balance.data.balance)
+        setOriginalBalance(response_balance.data.balance)
+      } catch (error) {
+        console.error('Error fetching initial data:', error)
+        setActiveTrades([])
+      }
     }
 
     fetchData()
   }, [])
 
+
+  // get live data from websocket server
   useEffect(() => {
     if (socket && !loading) {
       socket.onmessage = (event) => {
         const assetData: AssetData = JSON.parse(event.data);
+
         setAssetMap((prev) => ({
           ...prev,
           [assetData.asset]: assetData
@@ -87,17 +89,32 @@ const App = () => {
   }, [socket, loading]);
 
   useEffect(() => {
-    if (openTrade && assetMap[asset]) {
+    if (isTradeLiv) {
+      setActiveTrades((prev) => {
+        const updatedTrades = prev.map(trade => {
+          if (assetMap[trade.asset]) {
+            const currentBid = assetMap[trade.asset].bid;
+            const current_pnl = (currentBid - trade.open_price) * trade.volume;
+            return {
+              ...trade,
+              current_price: currentBid,
+              pnl: current_pnl
+            };
+          }
+          return trade;
+        });
 
-      const assetData = assetMap[asset];    
-      const currentBid = assetData.bid;        
-      const positionValue = currentBid * vol 
+        const totalPnL = updatedTrades.reduce((sum, trade) => sum + trade.pnl, 0);
 
-      setDisplayBalance(balance + positionValue)
-    //   setCurrentPrice(currentBid);
+        // console.log(totalPnL)
+        
+        setBalance(originalBalance + totalPnL);
+
+        return updatedTrades;
+      });
+      
     }
-  }, [assetMap, openTrade, vol, asset]);
-
+  }, [assetMap, isTradeLiv, originalBalance]); 
   const changeAsset = (newAsset: string) => {
     setAsset(newAsset)
   }
@@ -106,8 +123,19 @@ const App = () => {
     setSelectedTimePeriod(newTimePeriod);
   }
 
+  function checkOpenTrades() {
+    if (ActiveTrades.length > 0){
+      setIsTradeLive(true)
+    }
+    else {
+      setIsTradeLive(false)
+    }
+  }
+
+
   const executeOrder = async (volume: number, leverage: number) => {
     const body = {
+      userId: userId,
       type: tradeType,
       volume: volume,
       asset: asset,
@@ -116,7 +144,7 @@ const App = () => {
 
     // console.log(body)
 
-    const response = await axios.post(`${BACKEND_URL}/api/open/${userId}`, body)
+    const response = await axios.post(`${BACKEND_URL}/api/open/`, body)
 
     const data = response.data;
 
@@ -124,11 +152,13 @@ const App = () => {
       setErrorMsg(data.message)
       return
     }
-    setBalance(data.balance)
+    setBalance(data.balance);
+    setOriginalBalance(data.balance);
     setErrorMsg("")
-    setOpenTrade(true)
-    setVol(volume);
+    setIsTradeLive(true)
     // setCurrentPrice(data.current_price)
+
+    // console.log(data.orderId)
 
     const currentTrade: ActiveTradeType = {
       orderId: data.orderId,
@@ -136,7 +166,8 @@ const App = () => {
       type: tradeType,
       open_price: data.open_price,
       current_price: data.current_price,
-      volume: volume
+      volume: volume,
+      pnl: (data.current_price - data.open_price) * volume
     }
 
     // console.log(currentTrade)
@@ -145,12 +176,38 @@ const App = () => {
     // ActiveTrades.push()
   }
 
+  const closeOrder = async (orderId: number) => {
+    console.log('closing')
+
+    console.log(activeTrades);
+    
+    const body = {
+      userId: userId,
+      orderId: orderId
+    }
+
+    const response = await axios.post(`${BACKEND_URL}/api/close`, body)
+
+    const data = response.data;
+
+    console.log(data)
+    if (data.status === "failed") {
+      console.log(data.message)
+      return
+    }
+
+    setActiveTrades((prev) => prev.filter(trade => trade.orderId !== orderId));
+    setBalance(data.message)
+    setOriginalBalance(data.message);
+    checkOpenTrades();
+  }
+
   return (
     <div className="flex flex-col h-screen">
-      <Navbar balance={displayBalance} />
+      <Navbar balance={balance} />
       <div className='flex'>
         <div className="w-2/6 p-4">
-          <Prices assetMap={assetMap} changeAsset={changeAsset} />
+          <Prices assetMap={assetMap} changeAsset={changeAsset}/>
         </div>
         <div className="w-0.5 bg-neutral-300"></div>
         <div className='w-4/6'>  
@@ -164,7 +221,7 @@ const App = () => {
               <TradeSection handleOrder={executeOrder} errorMsg={errorMsg}/>
             </div>
           </div>
-          <ActiveTrades trades={activeTrades} assetMap={assetMap}/>
+          <ActiveTrades trades={activeTrades} closeOrder={closeOrder}/>
         </div>
       </div>
     </div>

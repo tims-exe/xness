@@ -27,7 +27,7 @@ await subscriber.connect()
 const spread = 0.025
 const halfSpread = spread / 2
 
-let openTradeId = 1;
+let openTradeId = 0;
 
 await subscriber.subscribe("trades", (message) => {
     const latestTrade = JSON.parse(message)
@@ -78,8 +78,6 @@ app.get("/api/get-balance/:id", (req, res) => {
 });
 
 
-
-
 app.get("/api/get-orders/:id", (req, res) => {
   const id = Number(req.params.id)
 
@@ -101,10 +99,11 @@ app.get("/api/get-orders/:id", (req, res) => {
             type: trade.type,
             volume: trade.volume,
             open_price: trade.openPrice,
-            current_price: assetData.bid
+            current_price: assetData.bid,
+            pnl: (assetData.bid - trade.openPrice) * trade.volume
         }
     })
-    console.log(activeTrades)
+    //console.log(activeTrades)
     return res.json(activeTrades)
   }
 
@@ -115,19 +114,16 @@ app.get("/api/get-orders/:id", (req, res) => {
 });
 
 
-
 // open order (buy/sell)
-app.post("/api/open/:id", async (req, res) => {
+app.post("/api/open/", async (req, res) => {
     console.log("POST: /api/open");
 
-    const id = Number(req.params.id);
-
     // TODO: zod validation
-    const { type, volume, asset, leverage } = req.body;
+    const { userId, type, volume, asset, leverage } = req.body;
 
     const position_value = volume * Assets[asset].ask
 
-    const user = Users.find(u => u.id === id)
+    const user = Users.find(u => u.id === userId)
 
     if (!user) {
         return res.json({
@@ -145,9 +141,11 @@ app.post("/api/open/:id", async (req, res) => {
     if (type === "Buy") {
         const margin = position_value/leverage
 
-        user.balances.USD -= margin 
+        // user.balances.USD -= margin 
+        openTradeId++;
 
         OpenTrades.push({
+            userId: userId,
             orderId : openTradeId,
             volume : volume,
             margin : margin,
@@ -156,15 +154,11 @@ app.post("/api/open/:id", async (req, res) => {
             type: type
         })
 
-        console.log(OpenTrades)
-
-        openTradeId++;
-
         return res.json({
             orderId: openTradeId,
             balance : user.balances.USD,
             open_price: Assets[asset].ask,
-            current_price: Assets[asset].bid
+            current_price: Assets[asset].bid,
         })
     }
     // else for sell
@@ -172,6 +166,39 @@ app.post("/api/open/:id", async (req, res) => {
         message: "error"
     })
 });
+
+
+// close order (buy/sell)
+app.post("/api/close/", async (req, res) => {
+    console.log("POST: /api/close");
+    console.log(req.body)
+    const { userId, orderId } = req.body
+
+    const currentTrade = OpenTrades.find(t => t.orderId === orderId)
+    const index = OpenTrades.findIndex(t => t.orderId === orderId);
+    const user = Users.find(u => u.id === userId)
+
+    console.log(user, currentTrade)
+
+    if(user) {
+        if (currentTrade && index !== -1) {
+            const currentPnl = (Assets[currentTrade?.asset].bid - currentTrade.openPrice) * currentTrade.volume
+
+            user.balances.USD += currentPnl
+
+            OpenTrades.splice(index, 1)
+
+            return res.json({
+                status: "success",
+                message: user?.balances.USD,
+            })
+        }
+        return res.json({
+            status: "failed",
+            message: "no trade"
+        })
+    }
+})
 
 
 app.listen(3000 , () => {
