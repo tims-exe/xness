@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import cors from 'cors';
 import {createClient} from 'redis'
 import { AssetData } from './types';
+import { Users } from "./users.js";
 
 dotenv.config()
 
@@ -39,14 +40,6 @@ await subscriber.subscribe("trades", (message) => {
     // console.log(Assets)
 });
 
-
-const Users = [
-    {
-        id: 1,
-        username: "abcde",
-        balance: 10000.00
-    }
-]
 
 // /api/trades/BTCUSDT/5
 
