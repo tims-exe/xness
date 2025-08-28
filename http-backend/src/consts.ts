@@ -7,7 +7,8 @@ export const Users = [
         password: "123",
         balances: {
             "USD": 10000
-        }
+        },
+        usedMargin: 0
     }
 ];
 
@@ -30,4 +31,4 @@ export const Assets: Record<string, Record<string, number>> = {
     }
 } 
 
-export const OpenTrades: OpenTradesTypes[] = []
+export let OpenTrades: OpenTradesTypes[] = []

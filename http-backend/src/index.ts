@@ -35,10 +35,28 @@ await subscriber.subscribe("trades", (message) => {
     Assets[latestTrade.asset] = {
         price: latestTrade.price,
         ask: latestTrade.ask,
-        bid: latestTrade.bid
+        bid: latestTrade.bid,
     }
 
-    // console.log(Assets)
+    for (let i = OpenTrades.length - 1; i >= 0; i--) {
+        const trade = OpenTrades[i]
+        const user = Users.find(u => u.id === trade.userId)
+
+        if (user) {
+            if (trade.asset === latestTrade.asset) {
+                if (trade.type === "Buy") {
+                    trade.pnl = (latestTrade.bid - trade.openPrice) * trade.volume
+                } else if (trade.type === "Sell") {
+                    trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
+                }
+
+                if (trade.pnl <= -trade.margin) {
+                    OpenTrades.splice(i, 1)
+                    user.usedMargin -= trade.margin
+                }
+            }
+        }
+    }
 });
 
 
@@ -90,7 +108,7 @@ app.get("/api/get-orders/:id", (req, res) => {
   }
 
   if (OpenTrades.length > 0) {
-    const activeTrades = OpenTrades.map(trade => {
+    const activeTrades = OpenTrades.map((trade) => {
         const assetData = Assets[trade.asset]
 
         return {
@@ -100,7 +118,9 @@ app.get("/api/get-orders/:id", (req, res) => {
             volume: trade.volume,
             open_price: trade.openPrice,
             current_price: assetData.bid,
-            pnl: (assetData.bid - trade.openPrice) * trade.volume
+            pnl: trade.type === "Buy" 
+            ? (assetData.bid - trade.openPrice) * trade.volume
+            : (trade.openPrice - assetData.ask) * trade.volume
         }
     })
     //console.log(activeTrades)
@@ -122,6 +142,7 @@ app.post("/api/open/", async (req, res) => {
     const { userId, type, volume, asset, leverage } = req.body;
 
     const position_value = volume * Assets[asset].ask
+    const margin = position_value/leverage
 
     const user = Users.find(u => u.id === userId)
 
@@ -131,16 +152,18 @@ app.post("/api/open/", async (req, res) => {
         })
     }
 
-    console.log(user.balances.USD)
-    if (user.balances.USD < position_value) {
+    const freeMargin = user.balances.USD - user.usedMargin
+
+    //console.log(user.balances.USD)
+    if (freeMargin < margin) {
         return res.json({
             message: "insufficient balance"
         })
     }
 
-    if (type === "Buy") {
-        const margin = position_value/leverage
+    user.usedMargin += margin
 
+    if (type === "Buy") {
         // user.balances.USD -= margin 
         openTradeId++;
 
@@ -151,7 +174,8 @@ app.post("/api/open/", async (req, res) => {
             margin : margin,
             openPrice: Assets[asset].ask,
             asset: asset,
-            type: type
+            type: type, 
+            pnl: (Assets[asset].bid - Assets[asset].ask) * volume
         })
 
         return res.json({
@@ -161,7 +185,29 @@ app.post("/api/open/", async (req, res) => {
             current_price: Assets[asset].bid,
         })
     }
-    // else for sell
+
+    else if (type === "Sell") {
+        openTradeId++;
+
+        OpenTrades.push({
+            userId: userId,
+            orderId : openTradeId,
+            volume : volume,
+            margin : margin,
+            openPrice: Assets[asset].bid,
+            asset: asset,
+            type: type, 
+            pnl: (Assets[asset].bid - Assets[asset].ask) * volume
+        })
+
+        return res.json({
+            orderId: openTradeId,
+            balance : user.balances.USD,
+            open_price: Assets[asset].bid,
+            current_price: Assets[asset].ask,
+        })
+    }
+
     return res.json({
         message: "error"
     })
@@ -182,9 +228,16 @@ app.post("/api/close/", async (req, res) => {
 
     if(user) {
         if (currentTrade && index !== -1) {
-            const currentPnl = (Assets[currentTrade?.asset].bid - currentTrade.openPrice) * currentTrade.volume
+            const currentPnl = 
+                currentTrade.type == "Buy" ?  
+                (Assets[currentTrade?.asset].bid - currentTrade.openPrice) * currentTrade.volume 
+                :
+                (currentTrade.openPrice - Assets[currentTrade?.asset].ask) * currentTrade.volume 
+
 
             user.balances.USD += currentPnl
+
+            user.usedMargin -= currentTrade.margin
 
             OpenTrades.splice(index, 1)
 

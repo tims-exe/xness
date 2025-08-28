@@ -12,4 +12,5 @@ export interface OpenTradesTypes {
     openPrice: number
     asset: string
     type: string
+    pnl: number
 }
