@@ -94,11 +94,12 @@ const App = () => {
     setSelectedTimePeriod(newTimePeriod);
   }
 
-  const executeOrder = async (volume: number) => {
+  const executeOrder = async (volume: number, leverage: number) => {
     const body = {
       type: tradeType,
-      quantity: volume,
+      volume: volume,
       asset: asset,
+      leverage: leverage
     }
 
     console.log(body)

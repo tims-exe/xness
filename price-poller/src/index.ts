@@ -11,6 +11,9 @@ const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethus
 const batch_size = 100;
 let batch: [string, string, string, number][] = [];
 
+const spread = 0.05
+const halfSpread = spread / 2
+
 const client = new Client({
   host: "localhost",        
   port: 5432,
@@ -59,12 +62,17 @@ ws.on("message",async (event) => {
       // console.log(batch.toString())
       batch = [];
     }
+    const currentAsk = parseData.data.p * (1 + halfSpread)
+    const currentBid = parseData.data.p * (1 - halfSpread)
+
     await redis.publish(
       "trades",
       JSON.stringify({
         timestamp: ts,
         asset: parseData.data.s,
         price: parseFloat(parseData.data.p),
+        ask: currentAsk,
+        bid: currentBid,
       })
     );
 });

@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import cors from 'cors';
 import {createClient} from 'redis'
 import { AssetData } from './types';
-import { Users } from "./users.js";
+import { Users, Assets, OpenTrades } from "./consts.js";
 
 dotenv.config()
 
@@ -23,19 +23,20 @@ const pool = new Pool({
 const subscriber = createClient()
 await subscriber.connect()
 
-const Assets: Record<string, number> = {
-    "BTCUSDT" : 0,
-    "SOLUSDT" : 0,
-    "ETHUSDT" : 0
-} 
 
 const spread = 0.025
 const halfSpread = spread / 2
 
+let openTradeId = 1;
+
 await subscriber.subscribe("trades", (message) => {
     const latestTrade = JSON.parse(message)
 
-    Assets[latestTrade.asset] = latestTrade.price
+    Assets[latestTrade.asset] = {
+        price: latestTrade.price,
+        ask: latestTrade.ask,
+        bid: latestTrade.bid
+    }
 
     // console.log(Assets)
 });
@@ -84,12 +85,10 @@ app.post("/api/open/:id", async (req, res) => {
     const id = Number(req.params.id);
 
     // TODO: zod validation
-    const { type, quantity, asset } = req.body;
+    const { type, volume, asset, leverage } = req.body;
 
-    const ask = Assets[asset] * (1 + halfSpread)
-    const bid = Assets[asset] * (1 - halfSpread)
-    const price = quantity * ask
-    console.log(quantity)
+    const position_value = volume * Assets[asset].ask
+
     const user = Users.find(u => u.id === id)
 
     if (!user) {
@@ -98,29 +97,41 @@ app.post("/api/open/:id", async (req, res) => {
         })
     }
 
-    let userBalance = user.balances.USD;
-    console.log(userBalance)
-    if (userBalance < price) {
+    console.log(user.balances.USD)
+    if (user.balances.USD < position_value) {
         return res.json({
             message: "insufficient balance"
         })
     }
 
-    userBalance -= price;
-
     if (type === "Buy") {
-        return res.json({
-            balance : userBalance,
-            open_price: ask,
-            current_price: bid
+        const margin = position_value/leverage
+
+        user.balances.USD -= margin 
+
+        OpenTrades.push({
+            orderId : openTradeId,
+            volume : volume,
+            margin : margin,
+            openPrice: Assets[asset].ask
         })
-    }  
+
+        console.log(OpenTrades)
+
+        openTradeId++;
+
+        return res.json({
+            orderId: openTradeId,
+            balance : user.balances.USD,
+            open_price: Assets[asset].ask,
+            current_price: Assets[asset].bid
+        })
+    }
     // else for sell
     return res.json({
         message: "error"
     })
 });
-
 
 
 app.listen(3000 , () => {
