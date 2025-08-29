@@ -115,7 +115,7 @@ app.get("/api/trades/:asset/:time", async (req, res) => {
     const table = `trades_${time}`
 
     try {
-        const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp DESC`; // LIMIT 50`;
+        const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp DESC LIMIT 200`;
         const { rows } = await pool.query(query, [asset]);
         return res.json(rows.reverse())
     } catch (error) {
