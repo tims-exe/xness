@@ -16,8 +16,6 @@ const ChartView = ({asset} : {asset : string}) => {
     const [trades, setTrades] = useState<TradeData[]>([]);
     const [selectedTimePeriod, setSelectedTimePeriod] = useState("1m");
 
-
-
     // get trade history (chart)
     useEffect(() => {
         const fetchTrades = async () => {
