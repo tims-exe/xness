@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import TradeChart from './TradeChart';
 import type { TimePeriod, TradeData } from '../types/main-types';
 import type { CandlestickData, Time } from 'lightweight-charts';
+import axios from 'axios';
 
 const TIME_PERIODS: TimePeriod[] = [
     { value: '1m', label: '1 Minute', ms: 60*1000 },
@@ -10,22 +11,29 @@ const TIME_PERIODS: TimePeriod[] = [
     { value: '30m', label: '30 Minutes', ms: 30*60*1000 },
 ];
 
-interface ChartViewProps {
-    trades: TradeData[];
-    asset: string;
-    selectedTimePeriod: string;
-    onTimePeriodChange: (timePeriod: string) => void;
-}
+const ChartView = ({asset} : {asset : string}) => {        
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+    const [trades, setTrades] = useState<TradeData[]>([]);
+    const [selectedTimePeriod, setSelectedTimePeriod] = useState("1m");
 
-const ChartView: React.FC<ChartViewProps> = ({
-    trades, 
-    asset, 
-    selectedTimePeriod, 
-    onTimePeriodChange,
-}) => {        
+
+
+    // get trade history (chart)
+    useEffect(() => {
+        const fetchTrades = async () => {
+            console.log(asset, selectedTimePeriod)
+            const response = await axios.get(
+                `${BACKEND_URL}/api/trades/${asset}/${selectedTimePeriod}`
+            );
+            setTrades(response.data || []); 
+            console.log(response.data)
+        };
+
+        fetchTrades();
+    }, [BACKEND_URL, selectedTimePeriod, asset]);
 
     const handleTimePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        onTimePeriodChange(event.target.value);
+        setSelectedTimePeriod(event.target.value);
     };
 
     const transformToCandles = (tradeData: TradeData[]): CandlestickData[] => {
@@ -91,10 +99,11 @@ const ChartView: React.FC<ChartViewProps> = ({
                     asset={asset} 
                     timePeriod={selectedTimePeriod}
                     allTimePeriods={TIME_PERIODS}
+                    selectedTimePeriod={selectedTimePeriod}
                 />
             </div>
         </div>
     );
 };
 
-export default ChartView;
+export default React.memo(ChartView);

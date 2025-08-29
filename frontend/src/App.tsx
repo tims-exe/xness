@@ -1,18 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import ChartView from "./components/ChartView";
 import Navbar from "./components/Navbar";
 import Prices from "./components/Prices";
-import type { ActiveTradeType, TradeData } from "./types/main-types";
+import type { ActiveTradeType } from "./types/main-types";
 import axios from "axios";
 import TradeSection from "./components/TradeSection";
 import { useSocket } from "./hooks/useSocket";
 import ActiveTrades from "./components/ActiveTrades";
 
 const App = () => {
-  const [trades, setTrades] = useState<TradeData[]>([]);
-  const [asset, setAsset] = useState("BTCUSDT");
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState("1m");
+  const asset = useRef("BTCUSDT");
   const [balance, setBalance] = useState<number>(0);
   const [originalBalance, setOriginalBalance] = useState<number>(0);
   const { assetMap } = useSocket();
@@ -27,20 +25,7 @@ const App = () => {
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 
-  // get trade history (chart)
-  useEffect(() => {
-    const fetchTrades = async () => {
-      const response = await axios.get(
-        `${BACKEND_URL}/api/trades/${asset}/${selectedTimePeriod}`
-      );
-      setTrades(response.data || []); 
-    };
-
-    fetchTrades();
-  }, [BACKEND_URL, selectedTimePeriod, asset]);
-
-
-  // get user balance 
+// get user balance 
   useEffect(() => {
     const fetchData = async () => {
       const response_balance = await axios.get(
@@ -129,12 +114,12 @@ const App = () => {
 
 
   const changeAsset = (newAsset: string) => {
-    setAsset(newAsset);
+    asset.current = newAsset
   };
 
-  const changeTimePeriod = (newTimePeriod: string) => {
-    setSelectedTimePeriod(newTimePeriod);
-  };
+  // const changeTimePeriod = (newTimePeriod: string) => {
+  //   setSelectedTimePeriod(newTimePeriod);
+  // };
 
   const handleTradeType = (type: "Buy" | "Sell") => {
     setTradeType(type)
@@ -166,7 +151,7 @@ const App = () => {
 
     const currentTrade: ActiveTradeType = {
       orderId: data.orderId,
-      asset: asset,
+      asset: asset.current,
       type: tradeType,
       open_price: data.open_price,
       current_price: data.current_price,
@@ -223,16 +208,9 @@ const App = () => {
         <div className="w-4/6">
           <div className="flex">
             <div className="flex-2">
-              {trades.length > 0 ? (
-                <ChartView
-                  trades={trades}
-                  asset={asset}
-                  selectedTimePeriod={selectedTimePeriod}
-                  onTimePeriodChange={changeTimePeriod}
-                />
-              ) : (
-                <p>no trades</p>
-              )}
+              <ChartView
+                asset={asset.current}
+              />
             </div>
             <div className="flex-1">
               <TradeSection handleOrder={executeOrder} errorMsg={errorMsg} tradeType={tradeType} handleTradeType={handleTradeType}/>

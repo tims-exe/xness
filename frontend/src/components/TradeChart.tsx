@@ -8,15 +8,19 @@ import {
     type UTCTimestamp,
     CandlestickSeries
 } from 'lightweight-charts';
-import type { ChartColors, TimePeriod } from '../types/main-types';
-import { useSocket } from '../hooks/useSocket';
+import type { ChartColors, TimePeriod, TradeData } from '../types/main-types';
+// import { useSocket } from '../hooks/useSocket';
+
+import React, { useState } from "react";
+import axios from 'axios';
 
 interface TradeChartProps {
     data: CandlestickData[];
     asset: string;
     timePeriod: string;
     colors?: ChartColors;
-    allTimePeriods: TimePeriod[]
+    allTimePeriods: TimePeriod[],
+    selectedTimePeriod: string
 }
 const TradeChart = ({ 
     data, 
@@ -30,15 +34,17 @@ const TradeChart = ({
         wickUpColor = '#26a69a',
         wickDownColor = '#ef5350',
     } = {},
-    asset
+    asset,
+    selectedTimePeriod
 }: TradeChartProps) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const lastCandleRef = useRef<CandlestickData | null>(null);
 
-    const { assetMap } = useSocket();
-    const livePrice = assetMap[asset]?.price ?? 0;
+
+    // const { assetMap } = useSocket();
+    // const livePrice = assetMap[asset]?.price ?? 0;
     
     // Get timeframe in seconds
     const getTimeframeSeconds = (period: string): number => {
@@ -124,40 +130,24 @@ const TradeChart = ({
         lastCandleRef.current = data.length > 0 ? data[data.length - 1] : null;
     }, [data]);
 
-    // // Handle live price updates
-    // useEffect(() => {
-    //     if (!seriesRef.current || !livePrice || livePrice <= 0) return;
-
-    //     const timeframeSeconds = getTimeframeSeconds(timePeriod);
-    //     const now = Date.now();
-    //     const currentBucket = toUTCTimestamp(Math.floor(now / (timeframeSeconds * 1000)) * timeframeSeconds * 1000);
-
-    //     // Check if we need to create a new candle or update existing one
-    //     if (!lastCandleRef.current || lastCandleRef.current.time !== currentBucket) {
-    //         // Create new candle
-    //         const newCandle: CandlestickData = {
-    //             time: currentBucket,
-    //             open: livePrice,
-    //             high: livePrice,
-    //             low: livePrice,
-    //             close: livePrice,
-    //         };
-    //         lastCandleRef.current = newCandle;
-    //         seriesRef.current.update(newCandle);
-    //     } else {
-    //         // Update existing candle
-    //         const updatedCandle: CandlestickData = {
-    //             ...lastCandleRef.current,
-    //             close: livePrice,
-    //             high: Math.max(lastCandleRef.current.high, livePrice),
-    //             low: Math.min(lastCandleRef.current.low, livePrice),
-    //         };
-    //         lastCandleRef.current = updatedCandle;
-    //         seriesRef.current.update(updatedCandle);
-    //     }
-    // }, [livePrice, timePeriod, allTimePeriods]);
-
     return <div ref={chartContainerRef} style={{ width: '100%', height: '350px' }} />;
 };
 
 export default TradeChart;
+
+
+// const TradeChart = () => {
+//     const [count, setCount] = useState(0)
+//     return (
+//     <div className="flex flex-col">
+//         {count} 
+//         <button className="bg-neutral-200 p-3 hover:cursor-pointer" onClick={() => {
+//             setCount(count + 1)
+//         }}>
+//             click 
+//         </button>
+//     </div>
+//   )
+// }
+
+// export default React.memo(TradeChart);
