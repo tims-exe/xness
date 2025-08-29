@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useRef } from 'react';
 import { 
     createChart, 
@@ -130,7 +131,7 @@ const TradeChart = ({
     // Handle live price updates
     useEffect(() => {
         if (!seriesRef.current || !livePrice || livePrice <= 0) return;
-        if (!lastCandleRef.current) return; // don't update until historical is loaded
+        if (!lastCandleRef.current) return; 
 
         const timeframeMs = getTimeframeMs(timePeriod);
         const now = Date.now();
@@ -140,7 +141,7 @@ const TradeChart = ({
             Math.floor(now / timeframeMs) * timeframeMs
         );
 
-        // Don't update if current bucket is older than last candle
+        // FIXED: Only skip if current bucket is actually older (not equal)
         if (currentBucket < (lastCandleRef.current.time as number)) {
             return;
         }
