@@ -1,3 +1,4 @@
+import React from 'react';
 import TradeChart from './TradeChart';
 import type { TradeData } from '../types/main-types';
 
@@ -18,12 +19,20 @@ const TIME_PERIODS: TimePeriod[] = [
     { value: '30m', label: '30 Minutes' },
 ];
 
-const ChartView = ({loading, trades, asset, selectedTimePeriod, onTimePeriodChange}: {
-    loading: boolean 
-    trades: TradeData[]
-    asset: string
-    selectedTimePeriod: string 
-    onTimePeriodChange : (timePeriod: string) => void
+interface ChartViewProps {
+    loading: boolean;
+    trades: TradeData[];
+    asset: string;
+    selectedTimePeriod: string;
+    onTimePeriodChange: (timePeriod: string) => void;
+}
+
+const ChartView: React.FC<ChartViewProps> = ({
+    loading, 
+    trades, 
+    asset, 
+    selectedTimePeriod, 
+    onTimePeriodChange
 }) => {        
 
     const handleTimePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -42,49 +51,61 @@ const ChartView = ({loading, trades, asset, selectedTimePeriod, onTimePeriodChan
         }));
     };
 
-    
-
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-lg">Loading trade data...</div>
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading trade data...</p>
+                </div>
             </div>
         );
     }
 
     if (!trades || trades.length === 0) {
         return (
-            <div className="flex items-center justify-center p-8">
-                <div className="text-gray-500 text-lg">No trade data available</div>
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <p className="text-gray-600">No trade data available</p>
+                </div>
             </div>
         );
     }
 
+    const candleData = transformToCandles(trades);
+
     return (
-        <div className="p-4 flex flex-col justify-end items-end">
-            <div className="mb-4 flex items-center justify-between w-full px-3">
-                <p className='font-bold text-2xl'>
-                    {asset}
-                </p>
-                <div className='flex flex-col'>
-                    <label htmlFor="time-period" className="block text-sm font-medium text-gray-700 mb-2 self-end">
-                        Time Period
-                    </label>
-                    <select
-                        id="time-period"
-                        value={selectedTimePeriod}
-                        onChange={handleTimePeriodChange}
-                        className="block w-48 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                    >
-                        {TIME_PERIODS.map((period) => (
-                            <option key={period.value} value={period.value}>
-                                {period.label}
-                            </option>
-                        ))}
-                    </select>
+        <div className="w-full">
+            <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-800">
+                        {asset}
+                    </h2>
+                    
+                    <div className="flex items-center space-x-4">
+                        <label className="text-sm font-medium text-gray-700">
+                            Time Period
+                        </label>
+                        <select
+                            value={selectedTimePeriod}
+                            onChange={handleTimePeriodChange}
+                            className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            {TIME_PERIODS.map((period) => (
+                                <option key={period.value} value={period.value}>
+                                    {period.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
+                
+                <TradeChart 
+                    data={candleData} 
+                    asset={asset} 
+                    timePeriod={selectedTimePeriod}
+                />
             </div>
-            <TradeChart data={transformToCandles(trades)} asset={asset} timePeriod={selectedTimePeriod} />
         </div>
     );
 };

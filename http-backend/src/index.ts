@@ -71,9 +71,9 @@ app.get("/api/trades/:asset/:time", async (req, res) => {
     const table = `trades_${time}`
 
     try {
-        const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp ASC`;
+        const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp DESC LIMIT 50`;
         const { rows } = await pool.query(query, [asset]);
-        return res.json(rows)
+        return res.json(rows.reverse())
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: "db query failed" });

@@ -1,67 +1,123 @@
-import Chart from "react-apexcharts";
+import { useEffect, useRef } from 'react';
+import { 
+    createChart, 
+    ColorType,
+    type IChartApi, 
+    type ISeriesApi, 
+    type CandlestickData, 
+    type Time,
+    CandlestickSeries
+} from 'lightweight-charts';
 
 export type Candle = {
     x: string | number | Date; 
     y: [number, number, number, number];
 };
 
-
-interface TradeChartProps {
-    data: Candle[]
-    asset: string  
-    timePeriod : string
-
+interface ChartColors {
+    backgroundColor?: string;
+    textColor?: string;
+    upColor?: string;
+    downColor?: string;
+    wickUpColor?: string;
+    wickDownColor?: string;
 }
 
-const TradeChart = ({ data, timePeriod }: TradeChartProps) => {
-        const series = [
-            {
-                data
-            },
-        ];
+interface TradeChartProps {
+    data: Candle[];
+    asset: string;
+    timePeriod: string;
+    colors?: ChartColors;
+}
 
-        const options: ApexCharts.ApexOptions = {
-            chart: {
-                type: "candlestick",
-                height: 350,
-                toolbar: {
-                    show: true,
-                },
-                animations: {
-                    enabled: false
-                }
-            },
-            // title: {
-            //     // text: `${asset} Candlestick Chart (${TIME_PERIODS.find(p => p.value === selectedTimePeriod)?.label})`,
-            //     text: `${asset}`,
-            //     align: "left",
-            // },
-            xaxis: {
-                type: "datetime",
-                labels: {
-                    format: timePeriod === '1m' || timePeriod === '5m' ? 'HH:mm' : 'dd MMM HH:mm'
-                }
-            },
-            yaxis: {
-                tooltip: {
-                    enabled: true,
-                },
-                labels: {
-                    formatter: (value: number) => `$${value.toLocaleString()}`
-                }
-            },
-        };
+const TradeChart = ({ 
+    data, 
+    colors: {
+        backgroundColor = '#ffffff',
+        textColor = '#333',
+        upColor = '#26a69a',
+        downColor = '#ef5350',
+        wickUpColor = '#26a69a',
+        wickDownColor = '#ef5350',
+    } = {}
+}: TradeChartProps) => {
+    const chartContainerRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<IChartApi | null>(null);
+    const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
-        return (
-            <div className="w-full rounded-2xl shadow-sm border border-gray-200 p-4 bg-white">
-                <Chart
-                    options={options}
-                    series={series}
-                    type="candlestick"
-                    height={350}
-                />
-            </div>
-        );
+    const transformToTradingViewFormat = (candles: Candle[]): CandlestickData[] => {
+        return candles.map(candle => ({
+            time: Math.floor(new Date(candle.x).getTime() / 1000) as Time,
+            open: candle.y[0],   
+            high: candle.y[1],   
+            low: candle.y[2],    
+            close: candle.y[3],
+        })).sort((a, b) => (a.time as number) - (b.time as number));
     };
 
-export default TradeChart
+    useEffect(() => {
+        if (!chartContainerRef.current) return;
+
+        const chart: IChartApi = createChart(chartContainerRef.current, {
+            width: chartContainerRef.current.clientWidth,
+            height: 350,
+            layout: {
+                background: { type: ColorType.Solid, color: backgroundColor },
+                textColor,
+            },
+            grid: {
+                vertLines: { color: 'rgba(197, 203, 206, 0.5)' },
+                horzLines: { color: 'rgba(197, 203, 206, 0.5)' },
+            },
+            timeScale: {
+                borderColor: '#485c7b',
+                timeVisible: true,
+                secondsVisible: false,
+            },
+            rightPriceScale: {
+                borderColor: '#485c7b',
+            },
+        });
+
+        const series: ISeriesApi<'Candlestick'> = chart.addSeries(CandlestickSeries, {
+            upColor,
+            downColor,
+            borderVisible: false,
+            wickUpColor,
+            wickDownColor,
+        });
+
+        chartRef.current = chart;
+        seriesRef.current = series;
+
+        const handleResize = () => {
+            if (chartContainerRef.current && chart) {
+                chart.applyOptions({
+                    width: chartContainerRef.current.clientWidth,
+                });
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            chart.remove();
+        };
+    }, [backgroundColor, textColor, upColor, downColor, wickUpColor, wickDownColor]);
+
+    useEffect(() => {
+        if (!seriesRef.current || !data || data.length === 0) return;
+
+        const chartData = transformToTradingViewFormat(data);
+        seriesRef.current.setData(chartData);
+        
+        if (chartRef.current) {
+            chartRef.current.timeScale().fitContent();
+        }
+    }, [data]);
+
+    return <div ref={chartContainerRef} style={{ width: '100%', height: '350px' }} />;
+};
+
+export default TradeChart;
