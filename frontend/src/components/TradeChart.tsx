@@ -113,6 +113,7 @@ const TradeChart = ({
         };
     }, [backgroundColor, textColor, upColor, downColor, wickUpColor, wickDownColor]);
 
+    
     // Initialize chart with historical data
     useEffect(() => {
         if (!seriesRef.current || !data || data.length === 0) return;
@@ -120,7 +121,18 @@ const TradeChart = ({
         seriesRef.current.setData(data);
         
         if (chartRef.current) {
-            chartRef.current.timeScale().fitContent();
+            if (data.length > 50) {
+                const startIndex = Math.max(0, data.length - 50);
+                const startTime = data[startIndex].time;
+                const endTime = data[data.length - 1].time;
+                
+                chartRef.current.timeScale().setVisibleRange({
+                    from: startTime,
+                    to: endTime,
+                });
+            } else {
+                chartRef.current.timeScale().fitContent();
+            }
         }
 
         // Set last candle to the most recent historical candle
