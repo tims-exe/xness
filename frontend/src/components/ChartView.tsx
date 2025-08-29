@@ -1,6 +1,6 @@
 import React from 'react';
 import TradeChart from './TradeChart';
-import type { AssetData, TimePeriod, TradeData } from '../types/main-types';
+import type { TimePeriod, TradeData } from '../types/main-types';
 import type { CandlestickData, Time } from 'lightweight-charts';
 
 const TIME_PERIODS: TimePeriod[] = [
@@ -11,21 +11,17 @@ const TIME_PERIODS: TimePeriod[] = [
 ];
 
 interface ChartViewProps {
-    loading: boolean;
     trades: TradeData[];
     asset: string;
     selectedTimePeriod: string;
     onTimePeriodChange: (timePeriod: string) => void;
-    assetMap : Record<string, AssetData>
 }
 
 const ChartView: React.FC<ChartViewProps> = ({
-    loading, 
     trades, 
     asset, 
     selectedTimePeriod, 
     onTimePeriodChange,
-    assetMap
 }) => {        
 
     const handleTimePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -42,16 +38,16 @@ const ChartView: React.FC<ChartViewProps> = ({
         })).sort((a, b) => (a.time as number) - (b.time as number));
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-96">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading trade data...</p>
-                </div>
-            </div>
-        );
-    }
+    // if (loading) {
+    //     return (
+    //         <div className="flex items-center justify-center h-96">
+    //             <div className="text-center">
+    //                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+    //                 <p className="text-gray-600">Loading trade data...</p>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     if (!trades || trades.length === 0) {
         return (
@@ -94,7 +90,6 @@ const ChartView: React.FC<ChartViewProps> = ({
                     data={candleData} 
                     asset={asset} 
                     timePeriod={selectedTimePeriod}
-                    livePrice={assetMap[asset]?.price ?? 0}
                     allTimePeriods={TIME_PERIODS}
                 />
             </div>

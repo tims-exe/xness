@@ -27,7 +27,7 @@ await subscriber.connect()
 // const spread = 0.025
 // const halfSpread = spread / 2
 
-const liquidationMargin = 0.09
+const liquidationMargin = 1
 
 let openTradeId = 0;
 
@@ -52,7 +52,7 @@ await subscriber.subscribe("trades", (message) => {
                     trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
                 }
 
-                if (trade.pnl <= -trade.margin * liquidationMargin) {
+                if (trade.pnl <= -trade.margin) {
                     OpenTrades.splice(i, 1)
                     user.usedMargin -= trade.margin
                 }

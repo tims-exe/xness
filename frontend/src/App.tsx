@@ -3,7 +3,7 @@ import "./App.css";
 import ChartView from "./components/ChartView";
 import Navbar from "./components/Navbar";
 import Prices from "./components/Prices";
-import type { ActiveTradeType, AssetData, TradeData } from "./types/main-types";
+import type { ActiveTradeType, TradeData } from "./types/main-types";
 import axios from "axios";
 import TradeSection from "./components/TradeSection";
 import { useSocket } from "./hooks/useSocket";
@@ -15,7 +15,7 @@ const App = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState("1m");
   const [balance, setBalance] = useState<number>(0);
   const [originalBalance, setOriginalBalance] = useState<number>(0);
-  const { socket, loading } = useSocket();
+  const { assetMap } = useSocket();
 
   const [isTradeLive, setIsTradeLive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -23,8 +23,6 @@ const App = () => {
   const [activeTrades, setActiveTrades] = useState<ActiveTradeType[]>([]);
 
   const userId = 1;
-
-  const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -54,27 +52,6 @@ const App = () => {
 
     fetchData();
   }, [BACKEND_URL, userId]);
-
-
-  // get live data from ws subscriber
-  useEffect(() => {
-    if (socket && !loading) {
-      socket.onmessage = (event) => {
-        const assetData: AssetData = JSON.parse(event.data);
-
-        setAssetMap((prev) => ({
-          ...prev,
-          [assetData.asset]: assetData,
-        }));
-      };
-      socket.onclose = () => {
-        console.log("close");
-      };
-      return () => {
-        socket.close();
-      };
-    }
-  }, [socket, loading]);
 
 
   // realtime live trades
@@ -250,10 +227,8 @@ const App = () => {
                 <ChartView
                   trades={trades}
                   asset={asset}
-                  loading={loading}
                   selectedTimePeriod={selectedTimePeriod}
                   onTimePeriodChange={changeTimePeriod}
-                  assetMap={assetMap}
                 />
               ) : (
                 <p>no trades</p>
