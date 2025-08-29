@@ -44,19 +44,61 @@ await subscriber.subscribe("trades", (message) => {
         const trade = OpenTrades[i]
         const user = Users.find(u => u.id === trade.userId)
 
-        if (user) {
-            if (trade.asset === latestTrade.asset) {
-                if (trade.type === "Buy") {
-                    trade.pnl = (latestTrade.bid - trade.openPrice) * trade.volume
-                } else if (trade.type === "Sell") {
-                    trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
-                }
+        if (!user || trade.asset !== latestTrade.asset) continue
 
-                if (trade.pnl <= -trade.margin) {
-                    OpenTrades.splice(i, 1)
-                    user.usedMargin -= trade.margin
-                }
+        let currentPrice
+        if (trade.type === "Buy") {
+            trade.pnl = (latestTrade.bid - trade.openPrice) * trade.volume
+            currentPrice = latestTrade.bid
+
+            // StopLoss check
+            if (trade.stopLoss && currentPrice <= trade.stopLoss) {
+                user.balances.USD += trade.pnl
+                user.usedMargin -= trade.margin
+                OpenTrades.splice(i, 1)
+                console.log('sl on buy')
+                continue
             }
+
+            // TakeProfit check
+            if (trade.takeProfit && currentPrice >= trade.takeProfit) {
+                user.balances.USD += trade.pnl
+                user.usedMargin -= trade.margin
+                OpenTrades.splice(i, 1)
+                console.log('tp on buy')
+                continue
+            }
+
+        } else if (trade.type === "Sell") {
+            trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
+            currentPrice = latestTrade.ask
+
+            // StopLoss check
+            if (trade.stopLoss && currentPrice >= trade.stopLoss) {
+                user.balances.USD += trade.pnl
+                user.usedMargin -= trade.margin
+                OpenTrades.splice(i, 1)
+                console.log('sl on sell')
+
+                continue
+            }
+
+            // TakeProfit check
+            if (trade.takeProfit && currentPrice <= trade.takeProfit) {
+                user.balances.USD += trade.pnl
+                user.usedMargin -= trade.margin
+                OpenTrades.splice(i, 1)
+                console.log('tp on sell')
+                continue
+            }
+        }
+
+        // Liquidation check
+        if (trade.pnl <= -trade.margin) {
+            user.usedMargin -= trade.margin
+            OpenTrades.splice(i, 1)
+            console.log('liquidated')
+
         }
     }
 });
@@ -122,7 +164,9 @@ app.get("/api/get-orders/:id", (req, res) => {
             current_price: trade.type === "Buy" ? assetData.bid : assetData.ask,
             pnl: trade.type === "Buy" 
             ? (assetData.bid - trade.openPrice) * trade.volume
-            : (trade.openPrice - assetData.ask) * trade.volume
+            : (trade.openPrice - assetData.ask) * trade.volume,
+            stopLoss: trade.stopLoss,
+            takeProfit: trade.takeProfit
         }
     })
     //console.log(activeTrades)
@@ -141,7 +185,7 @@ app.post("/api/open/", async (req, res) => {
     console.log("POST: /api/open");
 
     // TODO: zod validation
-    const { userId, type, volume, asset, leverage } = req.body;
+    const { userId, type, volume, asset, leverage, stopLoss, takeProfit } = req.body;
 
     const position_value = volume * Assets[asset].ask
     const margin = position_value/leverage
@@ -177,7 +221,9 @@ app.post("/api/open/", async (req, res) => {
             openPrice: Assets[asset].ask,
             asset: asset,
             type: type, 
-            pnl: (Assets[asset].bid - Assets[asset].ask) * volume
+            pnl: (Assets[asset].bid - Assets[asset].ask) * volume,
+            takeProfit: takeProfit,
+            stopLoss: stopLoss
         })
 
         return res.json({
@@ -199,7 +245,9 @@ app.post("/api/open/", async (req, res) => {
             openPrice: Assets[asset].bid,
             asset: asset,
             type: type, 
-            pnl: (Assets[asset].bid - Assets[asset].ask) * volume
+            pnl: (Assets[asset].bid - Assets[asset].ask) * volume,
+            takeProfit: takeProfit,
+            stopLoss: stopLoss
         })
 
         return res.json({

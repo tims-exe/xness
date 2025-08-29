@@ -1,7 +1,7 @@
 import { useState } from "react"
 
 interface TradeSectionProp {
-    handleOrder : (volume: number, leverage: number) => void
+    handleOrder : (volume: number, leverage: number, takeProfit: number | null, stopLoss: number | null ) => void
     errorMsg: string
     tradeType: "Buy" | "Sell"
     handleTradeType: (type: "Buy" | "Sell") => void
@@ -11,18 +11,25 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
   const [volume, setVolume] = useState("");
   const [leverage, setLeverage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [takeProfit, setTakeProfit] = useState("");
+  const [stopLoss, setStopLoss] = useState("");
 
   const handleConfirm = async () => {
-    if (!volume || !leverage) {
+    if (volume === "") {
       return; 
     }
-    
-    // const volumeNum = Number(volume);
-    // const leverageNum = Number(leverage);
+
+    const currentLev = leverage === "" ? 1 : Number(leverage)
+    const currentTP = takeProfit === "" ? null : Number(takeProfit)
+    const currentSL = stopLoss === "" ? null : Number(stopLoss)
     
     setIsLoading(true);
     try {
-      handleOrder(Number(volume), Number(leverage));
+      setVolume("")
+      setLeverage("")
+      setStopLoss("")
+      setTakeProfit("")
+      handleOrder(Number(volume), currentLev, currentTP, currentSL);
     } catch (error) {
       console.error("Error executing order:", error);
     } finally {
@@ -64,7 +71,7 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
                     setVolume(val === "" ? "" : val.toString());
                 }
             }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-2" 
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
             />
         </div>
         <p className="self-end mt-2 text-sm text-red-600">
@@ -72,42 +79,34 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
         </p>
         <div className="flex gap-5 items-center font-semibold">
             <p className="flex-1">Leverage</p>
-            <input 
-                type="number"
-                min={1}
-                max={100}
-                step={1}
-                value={leverage}
-                onChange={(e) => {
+            <input  
+            type="text"
+            inputMode="decimal"
+            pattern="[0-9]*\.?[0-9]*"
+            value={leverage}
+            onChange={(e) => {
                 const val = e.target.value;
-                if (val === "") {
-                    setLeverage("")
-                    return;
+                if (/^\d*\.?\d*$/.test(val)) {
+                    setLeverage(val === "" ? "" : val.toString());
                 }
-                const num = Number(val);
-                if (num >= 1 && num <= 100) {
-                    setLeverage(num.toString());
-                }
-                }}
-
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-2" 
+            }}
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
             />
         </div>
-        {/* <div className="flex gap-5 items-center font-semibold mt-2">
+        <div className="flex gap-5 items-center font-semibold mt-2">
             <p className="flex-1">Take Profit</p>
             <input  
             type="text"
             inputMode="decimal"
             pattern="[0-9]*\.?[0-9]*"
-            value={volume}
+            value={takeProfit}
             onChange={(e) => {
                 const val = e.target.value;
                 if (/^\d*\.?\d*$/.test(val)) {
-                    setVolume(val);
+                    setTakeProfit(val);
                 }
             }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-2" 
-            placeholder="Enter volume"
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
             />
         </div>
         <div className="flex gap-5 items-center font-semibold mt-2">
@@ -116,17 +115,16 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
             type="text"
             inputMode="decimal"
             pattern="[0-9]*\.?[0-9]*"
-            value={volume}
+            value={stopLoss}
             onChange={(e) => {
                 const val = e.target.value;
                 if (/^\d*\.?\d*$/.test(val)) {
-                    setVolume(val);
+                    setStopLoss(val);
                 }
             }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-2" 
-            placeholder="Enter volume"
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
             />
-        </div> */}
+        </div>
         <div className="mx-10">
             <button 
             onClick={handleConfirm}

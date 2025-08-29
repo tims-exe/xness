@@ -12,9 +12,12 @@ const ActiveTrades = ({ trades, closeOrder }: {
           <div className="w-full rounded-xl px-5 flex mb-2 font-semibold">
             <p className="flex-1">Asset</p>
             <p className="flex-1">Type</p>
+            <p className="flex-1">Vol</p>
             <p className="flex-1">Open Price</p>
             <p className="flex-1">Current Price</p>
-            <p className="flex-1">Profit/Loss</p>
+            <p className="flex-1">PnL</p>
+            <p className="flex-1">TP</p>
+            <p className="flex-1">SL</p>
             <p className="flex-0.5 text-center">Close</p>
           </div>
           
@@ -28,9 +31,12 @@ const ActiveTrades = ({ trades, closeOrder }: {
               >
                 <p className="flex-1">{trade.asset}</p>
                 <p className="flex-1">{trade.type}</p>
+                <p className="flex-1">{trade.volume}</p>
                 <p className="flex-1">{trade.open_price.toFixed(3)}</p>
                 <p className="flex-1">{trade.current_price.toFixed(3)}</p>
                 <p className={`flex-1 ${colour}`}>{trade.pnl.toFixed(2)}</p>
+                <p className={`flex-1 ${colour}`}>{trade.takeProfit ? trade.takeProfit.toFixed(2) : 'nil'}</p>
+                <p className={`flex-1 ${colour}`}>{trade.stopLoss ? trade.stopLoss.toFixed(2) : 'nil'}</p>
                 <button onClick={() => closeOrder(trade.orderId)}
                 className="flex-0.5 bg-red-300 px-3 rounded-md hover:cursor-pointer hover:bg-red-400 transition-all duration-200">
                   X

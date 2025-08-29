@@ -24,6 +24,8 @@ export interface ActiveTradeType {
     open_price: number 
     current_price: number
     pnl: number
+    stopLoss: number | null 
+    takeProfit: number | null
 }
 
 

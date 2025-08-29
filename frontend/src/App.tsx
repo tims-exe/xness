@@ -127,13 +127,15 @@ const App = () => {
 
   
   // open a trade
-  const executeOrder = async (volume: number, leverage: number) => {
+  const executeOrder = async (volume: number, leverage: number, takeProfit: number | null, stopLoss: number | null) => {
     const body = {
       userId: userId,
       type: tradeType,
       volume: volume,
-      asset: asset,
+      asset: asset.current,
       leverage: leverage,
+      takeProfit: takeProfit,
+      stopLoss: stopLoss
     };
 
     const response = await axios.post(`${BACKEND_URL}/api/open/`, body);
@@ -159,6 +161,8 @@ const App = () => {
       pnl: tradeType === "Buy" 
         ? (data.current_price - data.open_price) * volume
         : (data.open_price - data.current_price) * volume,
+      stopLoss: stopLoss,
+      takeProfit: takeProfit
     };
 
     setActiveTrades((prev) => {
@@ -201,13 +205,13 @@ const App = () => {
     <div className="flex flex-col h-screen">
       <Navbar balance={balance} />
       <div className="flex">
-        <div className="w-2/6 p-4">
+        <div className="w-2/7 p-4">
           <Prices assetMap={assetMap} changeAsset={changeAsset} />
         </div>
         <div className="w-0.5 bg-neutral-300"></div>
-        <div className="w-4/6">
+        <div className="w-5/7">
           <div className="flex">
-            <div className="flex-2">
+            <div className="flex-3">
               <ChartView
                 asset={asset.current}
               />

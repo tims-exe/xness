@@ -13,4 +13,6 @@ export interface OpenTradesTypes {
     asset: string
     type: string
     pnl: number
+    stopLoss: number | null
+    takeProfit: number | null
 }
