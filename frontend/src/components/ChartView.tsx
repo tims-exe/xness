@@ -1,11 +1,7 @@
 import React from 'react';
 import TradeChart from './TradeChart';
 import type { TradeData } from '../types/main-types';
-
-export type Candle = {
-    x: Date; 
-    y: [number, number, number, number];
-};
+import type { CandlestickData, Time } from 'lightweight-charts';
 
 type TimePeriod = {
     value: string;
@@ -39,16 +35,14 @@ const ChartView: React.FC<ChartViewProps> = ({
         onTimePeriodChange(event.target.value);
     };
 
-    const transformToCandles = (tradeData: TradeData[]): Candle[] => {
+    const transformToCandles = (tradeData: TradeData[]): CandlestickData[] => {
         return tradeData.map(trade => ({
-            x: new Date(trade.timestamp),
-            y: [
-                trade.open_price,   
-                trade.high_price,   
-                trade.low_price,    
-                trade.close_price   
-            ]
-        }));
+            time: Math.floor(new Date(trade.timestamp).getTime() / 1000) as Time,
+            open: trade.open_price,   
+            high: trade.high_price,   
+            low: trade.low_price,    
+            close: trade.close_price   
+        })).sort((a, b) => (a.time as number) - (b.time as number));
     };
 
     if (loading) {

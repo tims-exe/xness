@@ -1,18 +1,12 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { 
     createChart, 
     ColorType,
     type IChartApi, 
     type ISeriesApi, 
     type CandlestickData, 
-    type Time,
     CandlestickSeries
 } from 'lightweight-charts';
-
-export type Candle = {
-    x: string | number | Date; 
-    y: [number, number, number, number];
-};
 
 interface ChartColors {
     backgroundColor?: string;
@@ -24,7 +18,7 @@ interface ChartColors {
 }
 
 interface TradeChartProps {
-    data: Candle[];
+    data: CandlestickData[];
     asset: string;
     timePeriod: string;
     colors?: ChartColors;
@@ -44,16 +38,6 @@ const TradeChart = ({
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-
-    const transformToTradingViewFormat = (candles: Candle[]): CandlestickData[] => {
-        return candles.map(candle => ({
-            time: Math.floor(new Date(candle.x).getTime() / 1000) as Time,
-            open: candle.y[0],   
-            high: candle.y[1],   
-            low: candle.y[2],    
-            close: candle.y[3],
-        })).sort((a, b) => (a.time as number) - (b.time as number));
-    };
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -90,6 +74,7 @@ const TradeChart = ({
         chartRef.current = chart;
         seriesRef.current = series;
 
+        // Handle window resize
         const handleResize = () => {
             if (chartContainerRef.current && chart) {
                 chart.applyOptions({
@@ -109,8 +94,7 @@ const TradeChart = ({
     useEffect(() => {
         if (!seriesRef.current || !data || data.length === 0) return;
 
-        const chartData = transformToTradingViewFormat(data);
-        seriesRef.current.setData(chartData);
+        seriesRef.current.setData(data);
         
         if (chartRef.current) {
             chartRef.current.timeScale().fitContent();
