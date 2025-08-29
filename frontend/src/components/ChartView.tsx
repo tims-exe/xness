@@ -1,18 +1,13 @@
 import React from 'react';
 import TradeChart from './TradeChart';
-import type { TradeData } from '../types/main-types';
+import type { AssetData, TimePeriod, TradeData } from '../types/main-types';
 import type { CandlestickData, Time } from 'lightweight-charts';
 
-type TimePeriod = {
-    value: string;
-    label: string;
-};
-
 const TIME_PERIODS: TimePeriod[] = [
-    { value: '1m', label: '1 Minute' },
-    { value: '5m', label: '5 Minutes' },
-    { value: '15m', label: '15 Minutes' },
-    { value: '30m', label: '30 Minutes' },
+    { value: '1m', label: '1 Minute', ms: 60*1000 },
+    { value: '5m', label: '5 Minutes', ms: 5*60*1000 },
+    { value: '15m', label: '15 Minutes', ms: 15*60*1000 },
+    { value: '30m', label: '30 Minutes', ms: 30*60*1000 },
 ];
 
 interface ChartViewProps {
@@ -21,6 +16,7 @@ interface ChartViewProps {
     asset: string;
     selectedTimePeriod: string;
     onTimePeriodChange: (timePeriod: string) => void;
+    assetMap : Record<string, AssetData>
 }
 
 const ChartView: React.FC<ChartViewProps> = ({
@@ -28,7 +24,8 @@ const ChartView: React.FC<ChartViewProps> = ({
     trades, 
     asset, 
     selectedTimePeriod, 
-    onTimePeriodChange
+    onTimePeriodChange,
+    assetMap
 }) => {        
 
     const handleTimePeriodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -70,12 +67,11 @@ const ChartView: React.FC<ChartViewProps> = ({
 
     return (
         <div className="w-full">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg p-10">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">
                         {asset}
                     </h2>
-                    
                     <div className="flex items-center space-x-4">
                         <label className="text-sm font-medium text-gray-700">
                             Time Period
@@ -98,6 +94,8 @@ const ChartView: React.FC<ChartViewProps> = ({
                     data={candleData} 
                     asset={asset} 
                     timePeriod={selectedTimePeriod}
+                    livePrice={assetMap[asset]?.price ?? 0}
+                    allTimePeriods={TIME_PERIODS}
                 />
             </div>
         </div>

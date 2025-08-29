@@ -25,3 +25,20 @@ export interface ActiveTradeType {
     current_price: number
     pnl: number
 }
+
+
+export interface ChartColors {
+    backgroundColor?: string;
+    textColor?: string;
+    upColor?: string;
+    downColor?: string;
+    wickUpColor?: string;
+    wickDownColor?: string;
+}
+
+
+export interface TimePeriod {
+    value: string;
+    label: string;
+    ms: number
+};

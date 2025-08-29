@@ -28,6 +28,8 @@ const App = () => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+
+  // get trade history (chart)
   useEffect(() => {
     const fetchTrades = async () => {
       const response = await axios.get(
@@ -39,6 +41,8 @@ const App = () => {
     fetchTrades();
   }, [BACKEND_URL, selectedTimePeriod, asset]);
 
+
+  // get user balance 
   useEffect(() => {
     const fetchData = async () => {
       const response_balance = await axios.get(
@@ -51,6 +55,8 @@ const App = () => {
     fetchData();
   }, [BACKEND_URL, userId]);
 
+
+  // get live data from ws subscriber
   useEffect(() => {
     if (socket && !loading) {
       socket.onmessage = (event) => {
@@ -70,6 +76,8 @@ const App = () => {
     }
   }, [socket, loading]);
 
+
+  // realtime live trades
   useEffect(() => {
     if (isTradeLive) {
       setActiveTrades((prev) => {
@@ -115,6 +123,8 @@ const App = () => {
     }
   }, [assetMap, isTradeLive, originalBalance]);
 
+
+  // fetch current open trades
   useEffect(() => {
     const fetchActiveTrades = async () => {
       const response_orders = await axios.get(
@@ -139,6 +149,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, [BACKEND_URL, userId, originalBalance]);
 
+
+
   const changeAsset = (newAsset: string) => {
     setAsset(newAsset);
   };
@@ -151,6 +163,8 @@ const App = () => {
     setTradeType(type)
   }
 
+  
+  // open a trade
   const executeOrder = async (volume: number, leverage: number) => {
     const body = {
       userId: userId,
@@ -191,6 +205,8 @@ const App = () => {
     });
   };
 
+
+  // close a trade
   const closeOrder = async (orderId: number) => {
     const body = {
       userId: userId,
@@ -218,6 +234,7 @@ const App = () => {
     });
   };
 
+
   return (
     <div className="flex flex-col h-screen">
       <Navbar balance={balance} />
@@ -236,6 +253,7 @@ const App = () => {
                   loading={loading}
                   selectedTimePeriod={selectedTimePeriod}
                   onTimePeriodChange={changeTimePeriod}
+                  assetMap={assetMap}
                 />
               ) : (
                 <p>no trades</p>

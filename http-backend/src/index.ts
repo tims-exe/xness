@@ -24,8 +24,10 @@ const subscriber = createClient()
 await subscriber.connect()
 
 
-const spread = 0.025
-const halfSpread = spread / 2
+// const spread = 0.025
+// const halfSpread = spread / 2
+
+const liquidationMargin = 0.09
 
 let openTradeId = 0;
 
@@ -50,7 +52,7 @@ await subscriber.subscribe("trades", (message) => {
                     trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
                 }
 
-                if (trade.pnl <= -trade.margin) {
+                if (trade.pnl <= -trade.margin * liquidationMargin) {
                     OpenTrades.splice(i, 1)
                     user.usedMargin -= trade.margin
                 }
@@ -99,7 +101,7 @@ app.get("/api/get-balance/:id", (req, res) => {
 app.get("/api/get-orders/:id", (req, res) => {
   const id = Number(req.params.id)
 
-  console.log(`GET: /api/get-orders/${id}`)
+//   console.log(`GET: /api/get-orders/${id}`)
 
   const user = Users.find(u => u.id === id);
 

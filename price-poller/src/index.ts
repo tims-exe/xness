@@ -10,6 +10,7 @@ const url = `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethus
 
 const batch_size = 100;
 let batch: [string, string, string, number][] = [];
+let batch_count = 1;
 
 const spread = 0.025
 const halfSpread = spread / 2
@@ -53,13 +54,14 @@ ws.on("message",async (event) => {
     // console.log(parseData)
 
     if (batch.length >= batch_size) {
-      // const query = format(
-      //   "INSERT INTO trades (time, asset, price, quantity) VALUES %L",
-      //   batch
-      // );
-      // await client.query(query);
+      const query = format(
+        "INSERT INTO trades (time, asset, price, quantity) VALUES %L",
+        batch
+      );
+      await client.query(query);
 
-      // console.log(batch.toString())
+      console.log(batch_count)
+      batch_count++;
       batch = [];
     }
     const currentAsk = parseData.data.p * (1 + halfSpread)
