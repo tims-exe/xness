@@ -21,14 +21,22 @@ export interface AssetData {
 }
 
 
+// export interface TradeData {
+//     timestamp: string
+//     asset: string
+//     open_price: number
+//     close_price: number
+//     high_price: number
+//     low_price: number 
+//     volume: string
+// }
+
 export interface TradeData {
-    timestamp: string
-    asset: string
+    timestamp: number
     open_price: number
     close_price: number
     high_price: number
     low_price: number 
-    volume: string
 }
 
 export interface ActiveTradeType {

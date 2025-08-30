@@ -1,5 +1,5 @@
 import express from 'express'
-import { Assets, OpenTrades, Users } from '../consts'
+import { Assets, OpenTrades, Users } from '../consts.js'
 
 
 export const tradesRouter = express.Router()
@@ -15,10 +15,10 @@ tradesRouter.get('/', (req, res) => {
 
 
 // get current open orders
-tradesRouter.get("/api/get-orders/:id", (req, res) => {
-  const id = Number(req.params.id)
+tradesRouter.get("/get-orders", (req, res) => {
+  const userId = req.userId
 
-  const user = Users.find(u => u.id === id);
+  const user = Users.find(u => u.id === userId);
 
   if (!user) {
     return res.status(404).json({ error: "User not found" });
@@ -38,13 +38,14 @@ tradesRouter.get("/api/get-orders/:id", (req, res) => {
             asset: trade.asset,
             type: trade.type,
             volume: trade.volume,
-            open_price: trade.openPrice / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
+            open_price: trade.openPrice / Math.pow(10, assetData.decimal), 
             current_price: trade.type === "Buy" 
                 ? assetData.sell / Math.pow(10, assetData.decimal) 
-                : assetData.buy / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
-            pnl: currentPnl / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
+                : assetData.buy / Math.pow(10, assetData.decimal), 
+            pnl: currentPnl / Math.pow(10, assetData.decimal),
             stopLoss: trade.stopLoss,
-            takeProfit: trade.takeProfit
+            takeProfit: trade.takeProfit,
+            margin: trade.margin
         }
     })
     return res.json(activeTrades)
@@ -61,7 +62,8 @@ tradesRouter.get("/api/get-orders/:id", (req, res) => {
 tradesRouter.post('/open', (req, res) => {
     console.log("POST: /api/open");
 
-    const { userId, type, volume, asset, leverage, stopLoss, takeProfit } = req.body;
+    const userId = req.userId!
+    const { type, volume, asset, leverage, stopLoss, takeProfit } = req.body;
 
     const currentAsset = Assets.find(a => a.symbol === asset)!
     const currentBuy = currentAsset.buy / Math.pow(10, currentAsset.decimal)
@@ -99,28 +101,30 @@ tradesRouter.post('/open', (req, res) => {
         orderId: openTradeId,
         volume: volume,
         margin: margin,
-        openPrice: openPrice, // Store as big integer
+        openPrice: openPrice, 
         asset: asset,
         type: type,
-        pnl: (currentAsset.sell - currentAsset.buy) * volume, // Calculate with big integers
+        pnl: (currentAsset.sell - currentAsset.buy) * volume, 
         takeProfit: takeProfit,
         stopLoss: stopLoss
     })
 
     return res.json({
         orderId: openTradeId,
-        balance: user.balances.USD,
-        open_price: openPrice / Math.pow(10, currentAsset.decimal), // Convert to decimal for frontend
-        current_price: currentPrice / Math.pow(10, currentAsset.decimal), // Convert to decimal for frontend
+        // balance: user.balances.USD,
+        open_price: openPrice / Math.pow(10, currentAsset.decimal), 
+        current_price: currentPrice / Math.pow(10, currentAsset.decimal),
+        margin: margin,
+        leverage: leverage,
+        type: type
     })
 
 })
 
 
 
-
 // close order (buy/sell)
-tradesRouter.post("/api/close/", async (req, res) => {
+tradesRouter.post("/close", async (req, res) => {
     console.log("POST: /api/close");
     console.log(req.body)
     const { userId, orderId } = req.body

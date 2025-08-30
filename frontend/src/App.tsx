@@ -28,7 +28,7 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       const response_balance = await axios.get(
-        `${BACKEND_URL}/api/get-balance/${userId}`
+        `${BACKEND_URL}/api/v1/user/balance/`
       );
       setBalance(response_balance.data.balance);
       setOriginalBalance(response_balance.data.balance);
@@ -89,7 +89,7 @@ const App = () => {
   useEffect(() => {
     const fetchActiveTrades = async () => {
       const response_orders = await axios.get(
-        `${BACKEND_URL}/api/get-orders/${userId}`
+        `${BACKEND_URL}/api/v1/orders/get-orders/`
       );
       
       const tradesData = Array.isArray(response_orders.data) ? response_orders.data : [];
@@ -130,7 +130,7 @@ const App = () => {
       stopLoss: stopLoss
     };
 
-    const response = await axios.post(`${BACKEND_URL}/api/open/`, body);
+    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/open/`, body);
     const data = response.data;
 
     if (data.message && !data.orderId) {
@@ -171,7 +171,7 @@ const App = () => {
       orderId: orderId,
     };
 
-    const response = await axios.post(`${BACKEND_URL}/api/close`, body);
+    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/close/`, body);
     const data = response.data;
 
     setActiveTrades((prev) => {

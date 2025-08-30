@@ -1,1 +1,1 @@
-{"root":["./src/consts.ts","./src/index.ts","./src/pricesubscriber.ts","./src/types.ts","./src/routes/trades.ts","./src/routes/user.ts"],"version":"5.8.3"}
+{"root":["./src/consts.ts","./src/index.ts","./src/pricesubscriber.ts","./src/routes/authmiddleware.ts","./src/routes/orders.ts","./src/routes/user.ts","./src/types/express.d.ts","./src/types/main.ts"],"version":"5.8.3"}

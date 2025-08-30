@@ -1,11 +1,11 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Users } from '../consts'
+import { Users } from '../consts.js'
 import { NextFunction, Request, Response } from 'express'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 
 interface MyJwtPayload extends JwtPayload {
-    userId: number
+    userId: string
 }
 
 export const authMiddleware = (req:Request, res:Response, next: NextFunction) => {
@@ -28,8 +28,9 @@ export const authMiddleware = (req:Request, res:Response, next: NextFunction) =>
                 success: false,
                 message: "error validating user"
             })
+            return
         }
-        req.userId = userId
+        req.userId = userId.id
         next();
 
     } catch (error) {

@@ -7,6 +7,7 @@ import { AssetData, IncomingAssetData } from './types/main.js';
 import { PriceSubscriber } from './priceSubscriber.js';
 import { tradesRouter } from './routes/orders.js';
 import { userRouter } from './routes/user.js';
+import { authMiddleware } from './routes/authMiddleware.js';
 
 dotenv.config()
 
@@ -36,40 +37,45 @@ const liquidationMargin = 1
 
 let openTradeId = 0;
 
-app.get("/api/trades/:asset/:time", async (req, res) => {
-    const { asset, time } = req.params;
-    console.log(`GET: /api/trades/${asset}/${time}`)
+app.get("/api/v1/candles", authMiddleware, async (req, res) => {
+  const { asset, ts } = req.query;
 
-    const table = `trades_${time}`
+  if (!asset || !ts) {
+    return res.status(400).json({ error: "missing query params" });
+  }
 
-    try {
-        const query = `SELECT * FROM ${table} WHERE asset = $1 ORDER BY timestamp DESC LIMIT 200`;
-        const { rows } = await pool.query(query, [asset]);
-        return res.json(rows.reverse())
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "db query failed" });
-    }
-})
+  const table = `trades_${ts}`;
 
-app.get("/api/get-balance/:id", (req, res) => {
-    const id = Number(req.params.id)
-    console.log(`GET: /api/get-balance/${id}`)
+  try {
+    const query = `
+      SELECT * FROM ${table}
+      WHERE asset = $1 
+      ORDER BY timestamp ASC
+      LIMIT 200
+    `;
 
-    const user = Users.find(u => u.id === id);
+    const { rows } = await pool.query(query, [asset]);
 
-    if (!user) {
-        return res.status(404).json({ error: "User not found" });
-    }
+    const candles = rows.map(r => ({
+        timestamp: Math.floor(new Date(r.timestamp).getTime() / 1000),
+        open_price: Number(r.open_price),
+        close_price: Number(r.close_price),
+        high_price: Number(r.high_price),
+        low_price: Number(r.low_price),
+    }));
 
-    res.json({ balance: user.balances.USD });
+    return res.json(candles);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "db query failed" });
+  }
 });
 
 
 
-
 app.use('/api/v1/user', userRouter)
-app.use('/api/v1/trades', tradesRouter)
+app.use('/api/v1/orders', authMiddleware, tradesRouter)
 
 app.listen(3000, () => {
     console.log("http backend running")

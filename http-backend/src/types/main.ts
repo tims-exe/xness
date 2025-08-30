@@ -17,7 +17,7 @@ export interface IncomingAssetData {
 }
 
 export interface OpenTradesTypes {
-    userId: number
+    userId: string
     orderId: number 
     volume: number 
     margin: number
@@ -27,4 +27,13 @@ export interface OpenTradesTypes {
     pnl: number
     stopLoss: number | null
     takeProfit: number | null
+}
+
+
+export interface UserType {
+    id: string,
+    email: string,
+    password: string,
+    balances: Record<string, number>
+    usedMargin: number
 }

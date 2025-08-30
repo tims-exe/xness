@@ -21,7 +21,7 @@ const ChartView = ({asset} : {asset : string}) => {
         const fetchTrades = async () => {
             console.log(asset, selectedTimePeriod)
             const response = await axios.get(
-                `${BACKEND_URL}/api/trades/${asset}/${selectedTimePeriod}`
+                `${BACKEND_URL}/api/v1/candles?asset=${asset}&ts=${selectedTimePeriod}`
             );
             setTrades(response.data || []); 
             //console.log(response.data)
@@ -36,7 +36,7 @@ const ChartView = ({asset} : {asset : string}) => {
 
     const transformToCandles = (tradeData: TradeData[]): CandlestickData[] => {
         return tradeData.map(trade => ({
-            time: Math.floor(new Date(trade.timestamp).getTime() / 1000) as Time,
+            time: trade.timestamp as Time,
             open: trade.open_price,   
             high: trade.high_price,   
             low: trade.low_price,    
@@ -44,16 +44,6 @@ const ChartView = ({asset} : {asset : string}) => {
         })).sort((a, b) => (a.time as number) - (b.time as number));
     };
 
-    // if (loading) {
-    //     return (
-    //         <div className="flex items-center justify-center h-96">
-    //             <div className="text-center">
-    //                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-    //                 <p className="text-gray-600">Loading trade data...</p>
-    //             </div>
-    //         </div>
-    //     );
-    // }
 
     if (!trades || trades.length === 0) {
         return (
