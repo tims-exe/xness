@@ -1,9 +1,9 @@
 import express from 'express';
-import { Pool } from 'pg'; 
+import { Pool } from 'pg';
 import dotenv from 'dotenv'
 import cors from 'cors';
 import { Users, OpenTrades, Assets } from "./consts.js";
-import { AssetData, IncomingAssetData } from './types.js';
+import { AssetData, IncomingAssetData } from './types/main.js';
 import { PriceSubscriber } from './priceSubscriber.js';
 import { tradesRouter } from './routes/orders.js';
 import { userRouter } from './routes/user.js';
@@ -37,9 +37,9 @@ const liquidationMargin = 1
 let openTradeId = 0;
 
 app.get("/api/trades/:asset/:time", async (req, res) => {
-    const {asset, time} = req.params;
+    const { asset, time } = req.params;
     console.log(`GET: /api/trades/${asset}/${time}`)
-    
+
     const table = `trades_${time}`
 
     try {
@@ -53,24 +53,24 @@ app.get("/api/trades/:asset/:time", async (req, res) => {
 })
 
 app.get("/api/get-balance/:id", (req, res) => {
-  const id = Number(req.params.id)
-  console.log(`GET: /api/get-balance/${id}`)
+    const id = Number(req.params.id)
+    console.log(`GET: /api/get-balance/${id}`)
 
-  const user = Users.find(u => u.id === id);
+    const user = Users.find(u => u.id === id);
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
+    if (!user) {
+        return res.status(404).json({ error: "User not found" });
+    }
 
-  res.json({ balance: user.balances.USD });
+    res.json({ balance: user.balances.USD });
 });
 
 
 
 
 app.use('/api/v1/user', userRouter)
-app.use('/api/v1/trades',tradesRouter)
+app.use('/api/v1/trades', tradesRouter)
 
-app.listen(3000 , () => {
+app.listen(3000, () => {
     console.log("http backend running")
 })

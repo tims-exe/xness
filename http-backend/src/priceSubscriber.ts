@@ -1,5 +1,5 @@
-import {createClient} from 'redis'
-import { AssetData, IncomingAssetData, OpenTradesTypes } from './types.js'
+import { createClient } from 'redis'
+import { AssetData, IncomingAssetData, OpenTradesTypes } from './types/main.js'
 import { OpenTrades, Users } from './consts.js';
 
 export class PriceSubscriber {
@@ -18,7 +18,7 @@ export class PriceSubscriber {
 
     private updatePrice(newData: AssetData) {
         const idx = this.assets.findIndex(p => p.symbol === newData.symbol)
-    
+
         if (idx !== -1) {
             this.assets[idx] = newData
         }
@@ -28,9 +28,9 @@ export class PriceSubscriber {
     }
 
     private async setupSubscription() {
-        await this.subscriber.subscribe("trades" , (message) => {
+        await this.subscriber.subscribe("trades", (message) => {
             const latestTrade: IncomingAssetData = JSON.parse(message)
-            
+
             const newData: AssetData = {
                 symbol: latestTrade.asset,
                 buy: latestTrade.buy,
@@ -45,7 +45,7 @@ export class PriceSubscriber {
     }
 
     private processOpenTrades(latestTrade: IncomingAssetData) {
-        for (let i = OpenTrades.length - 1 ; i >= 0; i--) {
+        for (let i = OpenTrades.length - 1; i >= 0; i--) {
             const trade = OpenTrades[i]
             const user = Users.find(u => u.id === trade.userId)
 
@@ -81,7 +81,7 @@ export class PriceSubscriber {
     }
 
 
-    private checkSL(trade: OpenTradesTypes, currentAsset: AssetData, tradeType: "Buy" | "Sell") : boolean {
+    private checkSL(trade: OpenTradesTypes, currentAsset: AssetData, tradeType: "Buy" | "Sell"): boolean {
         if (!trade.stopLoss) return false;
 
         const currentPrice = tradeType === "Buy"
@@ -97,13 +97,13 @@ export class PriceSubscriber {
         }
     }
 
-    private checkTP(trade: OpenTradesTypes, currentAsset: AssetData, tradeType: "Buy" | "Sell") : boolean {
+    private checkTP(trade: OpenTradesTypes, currentAsset: AssetData, tradeType: "Buy" | "Sell"): boolean {
         if (!trade.takeProfit) return false;
 
         const currentPrice = tradeType === "Buy"
             ? currentAsset.sell
             : currentAsset.buy
-        
+
         const originalPrice = currentPrice / Math.pow(10, currentAsset.decimal)
 
         if (tradeType === "Buy") {
