@@ -1,4 +1,4 @@
-import { OpenTradesTypes } from "./types";
+import { AssetData, OpenTradesTypes } from "./types";
 
 export const Users = [
     {
@@ -13,22 +13,24 @@ export const Users = [
 ];
 
 
-export const Assets: Record<string, Record<string, number>> = {
-    "BTCUSDT" : {
-        price: 0, 
-        ask: 0, 
-        bid: 0
-    },
-    "SOLUSDT" : {
-        price: 0, 
-        ask: 0, 
-        bid: 0
-    },
-    "ETHUSDT" : {
-        price: 0, 
-        ask: 0, 
-        bid: 0
-    }
-} 
+// export const Assets: Record<string, Record<string, number>> = {
+//     "BTCUSDT" : {
+//         price: 0, 
+//         ask: 0, 
+//         bid: 0
+//     },
+//     "SOLUSDT" : {
+//         price: 0, 
+//         ask: 0, 
+//         bid: 0
+//     },
+//     "ETHUSDT" : {
+//         price: 0, 
+//         ask: 0, 
+//         bid: 0
+//     }
+// } 
+
+
 
 export let OpenTrades: OpenTradesTypes[] = []

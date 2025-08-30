@@ -24,8 +24,7 @@ const App = () => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-
-// get user balance 
+  // get user balance 
   useEffect(() => {
     const fetchData = async () => {
       const response_balance = await axios.get(
@@ -38,7 +37,6 @@ const App = () => {
     fetchData();
   }, [BACKEND_URL, userId]);
 
-
   // realtime live trades
   useEffect(() => {
     if (isTradeLive) {
@@ -50,24 +48,26 @@ const App = () => {
         }
 
         const updatedTrades = currentTrades.map((trade) => {
-          if (!trade || !trade.asset || !assetMap[trade.asset]) {
+          if (!trade || !trade.asset || !assetMap) {
             return trade;
           }
 
-          const currentAsset = assetMap[trade.asset];
+          const currentAsset = assetMap.find(a => a.symbol === trade.asset);
           
-          if (!currentAsset || typeof currentAsset.bid !== 'number' || typeof currentAsset.ask !== 'number') {
+          if (!currentAsset || typeof currentAsset.sell !== 'number' || typeof currentAsset.buy !== 'number') {            
             return trade;
           }
 
+          // Use the prices as received from backend (already converted to decimals)
           const currentPrice = trade.type === "Buy" 
-            ? currentAsset.bid
-            : currentAsset.ask;
-
+            ? currentAsset.sell / Math.pow(10, currentAsset.decimal)
+            : currentAsset.buy / Math.pow(10, currentAsset.decimal);
+          
           const current_pnl = trade.type === "Buy" 
             ? (currentPrice - trade.open_price) * trade.volume
             : (trade.open_price - currentPrice) * trade.volume;
 
+          console.log(currentPrice, trade.open_price, current_pnl)
           return {
             ...trade,
             current_price: currentPrice,
@@ -84,7 +84,6 @@ const App = () => {
       });
     }
   }, [assetMap, isTradeLive, originalBalance]);
-
 
   // fetch current open trades
   useEffect(() => {
@@ -111,21 +110,14 @@ const App = () => {
     return () => clearInterval(interval);
   }, [BACKEND_URL, userId, originalBalance]);
 
-
-
   const changeAsset = (newAsset: string) => {
     asset.current = newAsset
   };
-
-  // const changeTimePeriod = (newTimePeriod: string) => {
-  //   setSelectedTimePeriod(newTimePeriod);
-  // };
 
   const handleTradeType = (type: "Buy" | "Sell") => {
     setTradeType(type)
   }
 
-  
   // open a trade
   const executeOrder = async (volume: number, leverage: number, takeProfit: number | null, stopLoss: number | null) => {
     const body = {
@@ -151,6 +143,7 @@ const App = () => {
     setOriginalBalance(data.balance);
     setIsTradeLive(true);
 
+    // Backend now returns prices already converted to decimals
     const currentTrade: ActiveTradeType = {
       orderId: data.orderId,
       asset: asset.current,
@@ -170,7 +163,6 @@ const App = () => {
       return [...currentTrades, currentTrade];
     });
   };
-
 
   // close a trade
   const closeOrder = async (orderId: number) => {
@@ -199,7 +191,6 @@ const App = () => {
       return remaining;
     });
   };
-
 
   return (
     <div className="flex flex-col h-screen">

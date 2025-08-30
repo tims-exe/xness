@@ -40,9 +40,12 @@ const TradeChart = ({
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const lastCandleRef = useRef<CandlestickData | null>(null);
 
-    const { assetMap } = useSocket();
-    const livePrice = assetMap[asset]?.price ?? 0;
-    
+    const { assetMap } = useSocket()
+    const currentAsset = assetMap.find(a => a.symbol === asset);
+    const livePrice = currentAsset
+        ? currentAsset.buy / Math.pow(10, currentAsset.decimal)
+        : 0;
+
     // Get timeframe in milliseconds
     const getTimeframeMs = (period: string): number => {
         const timePeriod = allTimePeriods.find(tp => tp.value === period);
@@ -153,7 +156,7 @@ const TradeChart = ({
             Math.floor(now / timeframeMs) * timeframeMs
         );
 
-        // FIXED: Only skip if current bucket is actually older (not equal)
+        // Only skip if current bucket is actually older
         if (currentBucket < (lastCandleRef.current.time as number)) {
             return;
         }

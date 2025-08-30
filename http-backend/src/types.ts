@@ -1,7 +1,19 @@
 export interface AssetData {
-    timestamp: string
-    asset: string 
-    price: number
+    symbol: string 
+    buy: number
+    sell: number 
+    decimal : number
+    status: "up" | "down"
+}
+
+
+export interface IncomingAssetData {
+    timestamp: string,
+    asset: string,
+    price: number,
+    buy: number,
+    sell: number,
+    decimal: number
 }
 
 export interface OpenTradesTypes {

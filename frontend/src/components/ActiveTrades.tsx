@@ -21,7 +21,6 @@ const ActiveTrades = ({ trades, closeOrder }: {
             <p className="flex-0.5 text-center">Close</p>
           </div>
           
-          {/* Trade rows */}
           {trades.map((trade, index) => {
             const colour = trade.pnl < 0 ? 'text-red-600' : 'text-green-600'
             return (

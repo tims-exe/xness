@@ -24,7 +24,7 @@ const ChartView = ({asset} : {asset : string}) => {
                 `${BACKEND_URL}/api/trades/${asset}/${selectedTimePeriod}`
             );
             setTrades(response.data || []); 
-            console.log(response.data)
+            //console.log(response.data)
         };
 
         fetchTrades();

@@ -5,11 +5,21 @@
 //     ask: number 
 //     bid: number
 // }
+// export interface AssetData {
+//     price: number
+//     ask: number 
+//     bid: number
+// }
+
+
 export interface AssetData {
-    price: number
-    ask: number 
-    bid: number
+    symbol: string 
+    buy: number
+    sell: number 
+    decimal : number
+    status: "up" | "down"
 }
+
 
 export interface TradeData {
     timestamp: string

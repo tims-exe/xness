@@ -3,8 +3,8 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv'
 import cors from 'cors';
 import {createClient} from 'redis'
-import { AssetData } from './types';
-import { Users, Assets, OpenTrades } from "./consts.js";
+import { Users, OpenTrades } from "./consts.js";
+import { AssetData, IncomingAssetData } from './types.js';
 
 dotenv.config()
 
@@ -23,46 +23,64 @@ const pool = new Pool({
 const subscriber = createClient()
 await subscriber.connect()
 
-
-// const spread = 0.025
-// const halfSpread = spread / 2
-
 const liquidationMargin = 1
 
 let openTradeId = 0;
 
-await subscriber.subscribe("trades", (message) => {
-    const latestTrade = JSON.parse(message)
+const Assets: AssetData[] = [
+  { symbol: "BTCUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
+  { symbol: "SOLUSDT", buy: 0, sell: 0, decimal: 0, status: "up"},
+  { symbol: "ETHUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
+];
 
-    Assets[latestTrade.asset] = {
-        price: latestTrade.price,
-        ask: latestTrade.ask,
-        bid: latestTrade.bid,
+function updatePrice(newData: AssetData) {
+    const idx = Assets.findIndex(p => p.symbol === newData.symbol)
+
+    if (idx !== -1) {
+        Assets[idx] = newData
     }
+    else {
+        console.log('new data : ', newData)
+    }
+}
+
+await subscriber.subscribe("trades", (message) => {
+    const latestTrade: IncomingAssetData = JSON.parse(message)
+
+    const newData: AssetData = {
+        symbol: latestTrade.asset,
+        buy: latestTrade.buy,
+        sell: latestTrade.sell,
+        decimal: latestTrade.decimal,
+        status: "up"
+    }
+    updatePrice(newData)
 
     for (let i = OpenTrades.length - 1; i >= 0; i--) {
         const trade = OpenTrades[i]
         const user = Users.find(u => u.id === trade.userId)
 
         if (!user || trade.asset !== latestTrade.asset) continue
+        const currentAsset = Assets.find(a => a.symbol === latestTrade.asset)!
 
         let currentPrice
         if (trade.type === "Buy") {
-            trade.pnl = (latestTrade.bid - trade.openPrice) * trade.volume
-            currentPrice = latestTrade.bid
+            // PnL calculation using big integers
+            trade.pnl = (currentAsset.sell - trade.openPrice) * trade.volume
+            currentPrice = latestTrade.sell
 
-            // StopLoss check
-            if (trade.stopLoss && currentPrice <= trade.stopLoss) {
-                user.balances.USD += trade.pnl
+            // StopLoss check (convert to decimal for comparison)
+            if (trade.stopLoss && (currentAsset.sell / Math.pow(10, currentAsset.decimal)) <= trade.stopLoss) {
+                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
                 user.usedMargin -= trade.margin
                 OpenTrades.splice(i, 1)
                 console.log('sl on buy')
                 continue
             }
 
-            // TakeProfit check
-            if (trade.takeProfit && currentPrice >= trade.takeProfit) {
-                user.balances.USD += trade.pnl
+            // TakeProfit check (convert to decimal for comparison)
+            if (trade.takeProfit && (currentAsset.sell / Math.pow(10, currentAsset.decimal)) >= trade.takeProfit) {
+                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
                 user.usedMargin -= trade.margin
                 OpenTrades.splice(i, 1)
                 console.log('tp on buy')
@@ -70,22 +88,22 @@ await subscriber.subscribe("trades", (message) => {
             }
 
         } else if (trade.type === "Sell") {
-            trade.pnl = (trade.openPrice - latestTrade.ask) * trade.volume
-            currentPrice = latestTrade.ask
+            // PnL calculation using big integers
+            trade.pnl = (trade.openPrice - currentAsset.buy) * trade.volume
+            currentPrice = latestTrade.buy
 
-            // StopLoss check
-            if (trade.stopLoss && currentPrice >= trade.stopLoss) {
-                user.balances.USD += trade.pnl
+            // StopLoss check (convert to decimal for comparison)
+            if (trade.stopLoss && (currentAsset.buy / Math.pow(10, currentAsset.decimal)) >= trade.stopLoss) {
+                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
                 user.usedMargin -= trade.margin
                 OpenTrades.splice(i, 1)
                 console.log('sl on sell')
-
                 continue
             }
 
-            // TakeProfit check
-            if (trade.takeProfit && currentPrice <= trade.takeProfit) {
-                user.balances.USD += trade.pnl
+            // TakeProfit check (convert to decimal for comparison)
+            if (trade.takeProfit && (currentAsset.buy / Math.pow(10, currentAsset.decimal)) <= trade.takeProfit) {
+                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
                 user.usedMargin -= trade.margin
                 OpenTrades.splice(i, 1)
                 console.log('tp on sell')
@@ -93,23 +111,17 @@ await subscriber.subscribe("trades", (message) => {
             }
         }
 
-        // Liquidation check
-        if (trade.pnl <= -trade.margin) {
+        // Liquidation check (convert to decimal for comparison)
+        if ((trade.pnl / Math.pow(10, currentAsset.decimal)) <= -trade.margin) {
             user.usedMargin -= trade.margin
             OpenTrades.splice(i, 1)
             console.log('liquidated')
-
         }
     }
 });
 
-
-// /api/trades/BTCUSDT/5
-
 app.get("/api/trades/:asset/:time", async (req, res) => {
-    
     const {asset, time} = req.params;
-
     console.log(`GET: /api/trades/${asset}/${time}`)
     
     const table = `trades_${time}`
@@ -124,10 +136,8 @@ app.get("/api/trades/:asset/:time", async (req, res) => {
     }
 })
 
-
 app.get("/api/get-balance/:id", (req, res) => {
   const id = Number(req.params.id)
-
   console.log(`GET: /api/get-balance/${id}`)
 
   const user = Users.find(u => u.id === id);
@@ -139,11 +149,8 @@ app.get("/api/get-balance/:id", (req, res) => {
   res.json({ balance: user.balances.USD });
 });
 
-
 app.get("/api/get-orders/:id", (req, res) => {
   const id = Number(req.params.id)
-
-//   console.log(`GET: /api/get-orders/${id}`)
 
   const user = Users.find(u => u.id === id);
 
@@ -153,41 +160,46 @@ app.get("/api/get-orders/:id", (req, res) => {
 
   if (OpenTrades.length > 0) {
     const activeTrades = OpenTrades.map((trade) => {
-        const assetData = Assets[trade.asset]
-
+        const assetData = Assets.find(a => a.symbol === trade.asset)!
+        
+        // PnL calculation using big integers
+        const currentPnl = trade.type === "Buy" 
+            ? (assetData.sell - trade.openPrice) * trade.volume
+            : (trade.openPrice - assetData.buy) * trade.volume
+        
         return {
             orderId: trade.orderId,
             asset: trade.asset,
             type: trade.type,
             volume: trade.volume,
-            open_price: trade.openPrice,
-            current_price: trade.type === "Buy" ? assetData.bid : assetData.ask,
-            pnl: trade.type === "Buy" 
-            ? (assetData.bid - trade.openPrice) * trade.volume
-            : (trade.openPrice - assetData.ask) * trade.volume,
+            open_price: trade.openPrice / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
+            current_price: trade.type === "Buy" 
+                ? assetData.sell / Math.pow(10, assetData.decimal) 
+                : assetData.buy / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
+            pnl: currentPnl / Math.pow(10, assetData.decimal), // Convert to decimal for frontend
             stopLoss: trade.stopLoss,
             takeProfit: trade.takeProfit
         }
     })
-    //console.log(activeTrades)
     return res.json(activeTrades)
   }
 
   return res.json({
     message: ""
   })
-
 });
-
 
 // open order (buy/sell)
 app.post("/api/open/", async (req, res) => {
     console.log("POST: /api/open");
 
-    // TODO: zod validation
     const { userId, type, volume, asset, leverage, stopLoss, takeProfit } = req.body;
 
-    const position_value = volume * Assets[asset].ask
+    const currentAsset = Assets.find(a => a.symbol === asset)!
+    const currentBuy = currentAsset.buy / Math.pow(10, currentAsset.decimal)
+    const currentSell = currentAsset.sell / Math.pow(10, currentAsset.decimal)
+
+    const position_value = volume * currentBuy
     const margin = position_value/leverage
 
     const user = Users.find(u => u.id === userId)
@@ -200,7 +212,7 @@ app.post("/api/open/", async (req, res) => {
 
     const freeMargin = user.balances.USD - user.usedMargin
     console.log(freeMargin, margin, freeMargin < margin)
-    //console.log(user.balances.USD)
+    
     if (freeMargin < margin) {
         return res.json({
             message: "insufficient balance"
@@ -209,60 +221,37 @@ app.post("/api/open/", async (req, res) => {
 
     user.usedMargin += margin
 
-    if (type === "Buy") {
-        // user.balances.USD -= margin 
-        openTradeId++;
+    // Store prices as big integers
+    let openPrice: number = currentAsset.buy
+    let currentPrice: number = currentAsset.sell
 
-        OpenTrades.push({
-            userId: userId,
-            orderId : openTradeId,
-            volume : volume,
-            margin : margin,
-            openPrice: Assets[asset].ask,
-            asset: asset,
-            type: type, 
-            pnl: (Assets[asset].bid - Assets[asset].ask) * volume,
-            takeProfit: takeProfit,
-            stopLoss: stopLoss
-        })
-
-        return res.json({
-            orderId: openTradeId,
-            balance : user.balances.USD,
-            open_price: Assets[asset].ask,
-            current_price: Assets[asset].bid,
-        })
+    if (type === "Sell") {
+        openPrice = currentAsset.sell
+        currentPrice = currentAsset.buy
     }
 
-    else if (type === "Sell") {
-        openTradeId++;
+    openTradeId++;
 
-        OpenTrades.push({
-            userId: userId,
-            orderId : openTradeId,
-            volume : volume,
-            margin : margin,
-            openPrice: Assets[asset].bid,
-            asset: asset,
-            type: type, 
-            pnl: (Assets[asset].bid - Assets[asset].ask) * volume,
-            takeProfit: takeProfit,
-            stopLoss: stopLoss
-        })
-
-        return res.json({
-            orderId: openTradeId,
-            balance : user.balances.USD,
-            open_price: Assets[asset].bid,
-            current_price: Assets[asset].ask,
-        })
-    }
+    OpenTrades.push({
+        userId: userId,
+        orderId : openTradeId,
+        volume : volume,
+        margin : margin,
+        openPrice: openPrice, // Store as big integer
+        asset: asset,
+        type: type, 
+        pnl: (currentAsset.sell - currentAsset.buy) * volume, // Calculate with big integers
+        takeProfit: takeProfit,
+        stopLoss: stopLoss
+    })  
 
     return res.json({
-        message: "error"
+        orderId: openTradeId,
+        balance : user.balances.USD,
+        open_price: openPrice / Math.pow(10, currentAsset.decimal), // Convert to decimal for frontend
+        current_price: currentPrice / Math.pow(10, currentAsset.decimal), // Convert to decimal for frontend
     })
 });
-
 
 // close order (buy/sell)
 app.post("/api/close/", async (req, res) => {
@@ -271,6 +260,7 @@ app.post("/api/close/", async (req, res) => {
     const { userId, orderId } = req.body
 
     const currentTrade = OpenTrades.find(t => t.orderId === orderId)
+    const currentAsset = Assets.find(a => a.symbol === currentTrade?.asset)!
     const index = OpenTrades.findIndex(t => t.orderId === orderId);
     const user = Users.find(u => u.id === userId)
 
@@ -278,15 +268,15 @@ app.post("/api/close/", async (req, res) => {
 
     if(user) {
         if (currentTrade && index !== -1) {
+            // PnL calculation using big integers
             const currentPnl = 
                 currentTrade.type == "Buy" ?  
-                (Assets[currentTrade?.asset].bid - currentTrade.openPrice) * currentTrade.volume 
+                (currentAsset.sell - currentTrade.openPrice) * currentTrade.volume 
                 :
-                (currentTrade.openPrice - Assets[currentTrade?.asset].ask) * currentTrade.volume 
+                (currentTrade.openPrice - currentAsset.buy) * currentTrade.volume 
 
-
-            user.balances.USD += currentPnl
-
+            // Convert to decimal when updating user balance
+            user.balances.USD += currentPnl / Math.pow(10, currentAsset.decimal)
             user.usedMargin -= currentTrade.margin
 
             OpenTrades.splice(index, 1)
@@ -302,7 +292,6 @@ app.post("/api/close/", async (req, res) => {
         })
     }
 })
-
 
 app.listen(3000 , () => {
     console.log("http backend running")
