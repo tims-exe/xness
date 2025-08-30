@@ -120,7 +120,7 @@ const TradeChart = ({
     // Initialize chart with historical data
     useEffect(() => {
         if (!seriesRef.current || !data || data.length === 0) return;
-
+        
         seriesRef.current.setData(data);
         
         if (chartRef.current) {

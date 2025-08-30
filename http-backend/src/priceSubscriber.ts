@@ -1,6 +1,6 @@
 import {createClient} from 'redis'
-import { AssetData, IncomingAssetData, OpenTradesTypes } from './types'
-import { OpenTrades, Users } from './consts';
+import { AssetData, IncomingAssetData, OpenTradesTypes } from './types.js'
+import { OpenTrades, Users } from './consts.js';
 
 export class PriceSubscriber {
     private subscriber = createClient()
