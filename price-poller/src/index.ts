@@ -10,7 +10,7 @@ const url =
   "wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethusdt@aggTrade/solusdt@aggTrade";
 
 const batch_size = 100;
-let batch: [string, string, number, number, number, number][] = [];
+let batch: [string, string, number, number, number][] = [];
 let batch_count = 1;
 
 const spread = 0.01; // 1%
@@ -79,21 +79,21 @@ ws.on("message", async (event) => {
 
   const { buy, sell } = formatBuySell(priceWhole, decimal, spread);
 
-  const { whole: qtyWhole, decimal: qtyDecimal } = formatPrice(data.data.q);
+  // const { whole: qtyWhole, decimal: qtyDecimal } = formatPrice();
 
-  batch.push([ts, data.data.s, priceWhole, decimal, qtyWhole, qtyDecimal]);
+  batch.push([ts, data.data.s, priceWhole, decimal, data.data.q]);
 
 
   // TODO : UPDATE DB COLS TO HAVE NEW INT VALUES AND DECIMAL COL
   if (batch.length >= batch_size) {
-    // const query = format(
-    //   "INSERT INTO trades (time, asset, price_whole, price_decimal, quantity_whole, quantity_decimal) VALUES %L",
-    //   batch
-    // );
-    // await client.query(query);
+    const query = format(
+      "INSERT INTO trades (time, asset, price, decimals, quantity) VALUES %L",
+      batch
+    );
+    await client.query(query);
 
-    // console.log("Inserted batch:", batch_count);
-    // batch_count++;
+    console.log("Inserted batch:", batch_count);
+    batch_count++;
     batch = [];
   }
 
