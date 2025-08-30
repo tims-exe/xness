@@ -2,7 +2,6 @@ import express from 'express';
 import { Pool } from 'pg'; 
 import dotenv from 'dotenv'
 import cors from 'cors';
-import {createClient} from 'redis'
 import { Users, OpenTrades } from "./consts.js";
 import { AssetData, IncomingAssetData } from './types.js';
 
@@ -27,22 +26,7 @@ const liquidationMargin = 1
 
 let openTradeId = 0;
 
-const Assets: AssetData[] = [
-  { symbol: "BTCUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
-  { symbol: "SOLUSDT", buy: 0, sell: 0, decimal: 0, status: "up"},
-  { symbol: "ETHUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
-];
 
-function updatePrice(newData: AssetData) {
-    const idx = Assets.findIndex(p => p.symbol === newData.symbol)
-
-    if (idx !== -1) {
-        Assets[idx] = newData
-    }
-    else {
-        console.log('new data : ', newData)
-    }
-}
 
 await subscriber.subscribe("trades", (message) => {
     const latestTrade: IncomingAssetData = JSON.parse(message)
