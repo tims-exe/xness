@@ -121,8 +121,8 @@ const TradeChart = ({
         seriesRef.current.setData(data);
         
         if (chartRef.current) {
-            if (data.length > 50) {
-                const startIndex = Math.max(0, data.length - 50);
+            if (data.length > 100) {
+                const startIndex = Math.max(0, data.length - 100);
                 const startTime = data[startIndex].time;
                 const endTime = data[data.length - 1].time;
                 

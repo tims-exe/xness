@@ -1,6 +1,11 @@
+// export interface AssetData {
+//     timestamp: string
+//     asset: string 
+//     price: number
+//     ask: number 
+//     bid: number
+// }
 export interface AssetData {
-    timestamp: string
-    asset: string 
     price: number
     ask: number 
     bid: number

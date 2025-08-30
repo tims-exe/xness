@@ -4,11 +4,11 @@ import type { AssetData } from "../types/main-types";
 export function useSocket() {
     const [loading, setLoading] = useState(true)
     const [socket, setSocket] = useState<WebSocket>();
-    const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({});
-
-        //     "BTCUSTD": { timestamp: "", asset: "BTCUSTD", price: 0, ask: 0, bid: 0 },
-        // "SOLUSTD": { timestamp: "", asset: "SOLUSTD", price: 0, ask: 0, bid: 0 },
-        // "ETHUSTD": { timestamp: "", asset: "ETHUSTD", price: 0, ask: 0, bid: 0 },
+    const [assetMap, setAssetMap] = useState<Record<string, AssetData>>({
+        "BTCUSDT": { price: 0, ask: 0, bid: 0 },
+        "SOLUSDT": { price: 0, ask: 0, bid: 0 },
+        "ETHUSDT": { price: 0, ask: 0, bid: 0 },
+    });
 
 
     useEffect(() => {
@@ -21,11 +21,15 @@ export function useSocket() {
             setSocket(ws)
         }
         ws.onmessage = (event) => {
-            const assetData: AssetData = JSON.parse(event.data);
+            const assetData = JSON.parse(event.data);
 
             setAssetMap((prev) => ({
                 ...prev,
-                [assetData.asset]: assetData,
+                [assetData.asset]: {
+                    price: assetData.price,
+                    ask: assetData.ask,
+                    bid: assetData.bid
+                },
             }));
         };
         ws.onclose = () => {
