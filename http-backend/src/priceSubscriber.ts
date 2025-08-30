@@ -5,11 +5,11 @@ import { OpenTrades, Users } from './consts';
 export class PriceSubscriber {
     private subscriber = createClient()
 
-    private assets: AssetData[] = [
-        { symbol: "BTCUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
-        { symbol: "SOLUSDT", buy: 0, sell: 0, decimal: 0, status: "up"},
-        { symbol: "ETHUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
-    ];
+    private assets: AssetData[] = []
+
+    constructor(assets: AssetData[]) {
+        this.assets = assets
+    }
 
     async connect() {
         await this.subscriber.connect()
@@ -56,7 +56,7 @@ export class PriceSubscriber {
             if (trade.type === "Buy") {
                 trade.pnl = (currentAsset.sell - trade.openPrice) * trade.volume
 
-                if (this.checkSL(trade, currentAsset, "Buy") || this.checkTP()) {
+                if (this.checkSL(trade, currentAsset, "Buy") || this.checkTP(trade, currentAsset, "Buy")) {
                     this.closeTrade(i, trade, user, currentAsset)
                     continue
                 }
@@ -65,7 +65,7 @@ export class PriceSubscriber {
             else if (trade.type === "Sell") {
                 trade.pnl = (trade.openPrice - currentAsset.buy) * trade.volume
 
-                if (this.checkSL(trade, currentAsset, "Sell") || this.checkTP()) {
+                if (this.checkSL(trade, currentAsset, "Sell") || this.checkTP(trade, currentAsset, "Buy")) {
                     this.closeTrade(i, trade, user, currentAsset)
                     continue
                 }
@@ -87,6 +87,38 @@ export class PriceSubscriber {
         const currentPrice = tradeType === "Buy"
             ? currentAsset.sell
             : currentAsset.buy
+        const originalPrice = currentPrice / Math.pow(10, currentAsset.decimal);
+
+        if (tradeType === "Buy") {
+            return originalPrice <= trade.stopLoss
+        }
+        else {
+            return originalPrice >= trade.stopLoss
+        }
     }
 
+    private checkTP(trade: OpenTradesTypes, currentAsset: AssetData, tradeType: "Buy" | "Sell") : boolean {
+        if (!trade.takeProfit) return false;
+
+        const currentPrice = tradeType === "Buy"
+            ? currentAsset.sell
+            : currentAsset.buy
+        
+        const originalPrice = currentPrice / Math.pow(10, currentAsset.decimal)
+
+        if (tradeType === "Buy") {
+            return originalPrice >= trade.takeProfit
+        }
+
+        else {
+            return originalPrice <= trade.takeProfit
+        }
+    }
+
+    private closeTrade(index: number, trade: OpenTradesTypes, user: any, currentAsset: AssetData) {
+        user.balance.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
+        user.usedMargin -= trade.margin
+        OpenTrades.splice(index, 1)
+        console.log("trade closed : ", trade.type, trade.asset)
+    }
 }

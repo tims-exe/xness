@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import cors from 'cors';
 import { Users, OpenTrades } from "./consts.js";
 import { AssetData, IncomingAssetData } from './types.js';
+import { PriceSubscriber } from './priceSubscriber.js';
 
 dotenv.config()
 
@@ -19,90 +20,25 @@ const pool = new Pool({
     port: 5432,
 })
 
-const subscriber = createClient()
-await subscriber.connect()
+
+const Assets: AssetData[] = [
+    { symbol: "BTCUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
+    { symbol: "SOLUSDT", buy: 0, sell: 0, decimal: 0, status: "up"},
+    { symbol: "ETHUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
+];
+
+const priceSubscriber = new PriceSubscriber(Assets);
+
+try {
+    await priceSubscriber.connect()
+    console.log('connected to pubsub')
+} catch (error) {
+    console.log('error starting server', error)
+}
 
 const liquidationMargin = 1
 
 let openTradeId = 0;
-
-
-
-await subscriber.subscribe("trades", (message) => {
-    const latestTrade: IncomingAssetData = JSON.parse(message)
-
-    const newData: AssetData = {
-        symbol: latestTrade.asset,
-        buy: latestTrade.buy,
-        sell: latestTrade.sell,
-        decimal: latestTrade.decimal,
-        status: "up"
-    }
-    updatePrice(newData)
-
-    for (let i = OpenTrades.length - 1; i >= 0; i--) {
-        const trade = OpenTrades[i]
-        const user = Users.find(u => u.id === trade.userId)
-
-        if (!user || trade.asset !== latestTrade.asset) continue
-        const currentAsset = Assets.find(a => a.symbol === latestTrade.asset)!
-
-        let currentPrice
-        if (trade.type === "Buy") {
-            // PnL calculation using big integers
-            trade.pnl = (currentAsset.sell - trade.openPrice) * trade.volume
-            currentPrice = latestTrade.sell
-
-            // StopLoss check (convert to decimal for comparison)
-            if (trade.stopLoss && (currentAsset.sell / Math.pow(10, currentAsset.decimal)) <= trade.stopLoss) {
-                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
-                user.usedMargin -= trade.margin
-                OpenTrades.splice(i, 1)
-                console.log('sl on buy')
-                continue
-            }
-
-            // TakeProfit check (convert to decimal for comparison)
-            if (trade.takeProfit && (currentAsset.sell / Math.pow(10, currentAsset.decimal)) >= trade.takeProfit) {
-                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
-                user.usedMargin -= trade.margin
-                OpenTrades.splice(i, 1)
-                console.log('tp on buy')
-                continue
-            }
-
-        } else if (trade.type === "Sell") {
-            // PnL calculation using big integers
-            trade.pnl = (trade.openPrice - currentAsset.buy) * trade.volume
-            currentPrice = latestTrade.buy
-
-            // StopLoss check (convert to decimal for comparison)
-            if (trade.stopLoss && (currentAsset.buy / Math.pow(10, currentAsset.decimal)) >= trade.stopLoss) {
-                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
-                user.usedMargin -= trade.margin
-                OpenTrades.splice(i, 1)
-                console.log('sl on sell')
-                continue
-            }
-
-            // TakeProfit check (convert to decimal for comparison)
-            if (trade.takeProfit && (currentAsset.buy / Math.pow(10, currentAsset.decimal)) <= trade.takeProfit) {
-                user.balances.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
-                user.usedMargin -= trade.margin
-                OpenTrades.splice(i, 1)
-                console.log('tp on sell')
-                continue
-            }
-        }
-
-        // Liquidation check (convert to decimal for comparison)
-        if ((trade.pnl / Math.pow(10, currentAsset.decimal)) <= -trade.margin) {
-            user.usedMargin -= trade.margin
-            OpenTrades.splice(i, 1)
-            console.log('liquidated')
-        }
-    }
-});
 
 app.get("/api/trades/:asset/:time", async (req, res) => {
     const {asset, time} = req.params;
