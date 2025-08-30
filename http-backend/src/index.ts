@@ -9,7 +9,6 @@ import { tradesRouter } from './routes/orders.js';
 import { userRouter } from './routes/user.js';
 import { authMiddleware } from './routes/authMiddleware.js';
 
-dotenv.config()
 
 const app = express()
 app.use(cors())

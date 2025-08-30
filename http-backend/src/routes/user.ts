@@ -3,10 +3,11 @@ import { authMiddleware } from './authMiddleware.js'
 import { Users } from '../consts.js'
 import { v4 as uuidv4 } from "uuid";
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
+dotenv.config()
 
 export const userRouter = express.Router()
 
-const JWT_SECRET = process.env.JWT_SECRET!
 
 userRouter.post('/signup', (req, res) => {
     const { email, password } = req.body
@@ -47,6 +48,8 @@ userRouter.post('/signup', (req, res) => {
 userRouter.post('/signin', (req, res) => {
     const { email, password } = req.body;
     console.log(`POST: /api/v1/user/signin/`)
+
+    const JWT_SECRET = process.env.JWT_SECRET!
 
     if (!email || !password) {
         console.log('provide email and password')
