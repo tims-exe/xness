@@ -1,12 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-interface SigninResponse {
-  success: boolean;
-  token?: string;
-  message?: string;
-}
+import { useVerify } from '../hooks/useVerify';
 
 const Signin = () => {
   const [email, setEmail] = useState<string>('');
@@ -15,36 +10,20 @@ const Signin = () => {
   const navigate = useNavigate();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-  // Check if user already has valid token when component loads
-  useEffect(() => {
-    const checkExistingToken = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        // Try to use existing token to make a request
-        try {
-          await axios.get(`${BACKEND_URL}/api/v1/user/profile`, {
-            headers: {
-              'Authorization': token // Just the token, no Bearer
-            }
-          });
-          // If successful, user is already logged in
-          navigate('/home');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (error) {
-          localStorage.removeItem('token');
-        }
-      }
-    };
-    
-    checkExistingToken();
-  }, [BACKEND_URL, navigate]);
+  const { isVerified, isLoading } = useVerify();
 
-  const handleSignin = async (): Promise<void> => {
+  useEffect(() => {
+    if (!isLoading && isVerified === true) {
+      navigate('/home');
+    }
+  }, [isVerified, isLoading, navigate]);
+
+  const handleSignin = async () => {
     if (!email || !password) return;
     setLoading(true);
     
     try {
-      const response = await axios.post<SigninResponse>(`${BACKEND_URL}/api/v1/user/signin`, {
+      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password
       });
@@ -63,6 +42,14 @@ const Signin = () => {
       setLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">

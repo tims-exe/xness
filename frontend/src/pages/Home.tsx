@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ChartView from "../components/ChartView";
 import Navbar from "../components/Navbar";
 import Prices from "../components/Prices";
@@ -6,9 +7,13 @@ import type { ActiveTradeType } from "../types/main-types";
 import axios from "axios";
 import TradeSection from "../components/TradeSection";
 import { useSocket } from "../hooks/useSocket";
+import { useVerify } from "../hooks/useVerify";
 import ActiveTrades from "../components/ActiveTrades";
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { isVerified, isLoading } = useVerify();
+  
   const asset = useRef("BTCUSDT");
   const [balance, setBalance] = useState<number>(0);
   const [originalBalance, setOriginalBalance] = useState<number>(0);
@@ -22,30 +27,44 @@ const Home = () => {
   const userId = 1;
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
   const token = localStorage.getItem("token")!
+
+  useEffect(() => {
+    if (!isLoading && isVerified === false) {
+      navigate('/signin');
+    }
+  }, [isVerified, isLoading, navigate]);
 
   // get user balance 
   useEffect(() => {
+    // Only fetch data if user is verified
+    if (isVerified !== true) return;
+
     const fetchData = async () => {
-      const response_balance = await axios.get(
-        `${BACKEND_URL}/api/v1/user/balance`,
-        {
-          headers : {
-            Authorization: token
+      try {
+        const response_balance = await axios.get(
+          `${BACKEND_URL}/api/v1/user/balance`,
+          {
+            headers : {
+              Authorization: token
+            }
           }
-        }
-      );
-      setBalance(response_balance.data.balance);
-      setOriginalBalance(response_balance.data.balance);
+        );
+        setBalance(response_balance.data.balance);
+        setOriginalBalance(response_balance.data.balance);
+      } catch (error) {
+        console.error('Failed to fetch balance:', error);
+        // If balance fetch fails due to auth, redirect to signin
+        navigate('/signin');
+      }
     };
 
     fetchData();
-  }, [BACKEND_URL, userId]);
+  }, [BACKEND_URL, userId, isVerified, token, navigate]);
 
   // realtime live trades
   useEffect(() => {
-    if (isTradeLive) {
+    if (isTradeLive && isVerified) {
       setActiveTrades((prev) => {
         const currentTrades = Array.isArray(prev) ? prev : [];
         
@@ -89,29 +108,38 @@ const Home = () => {
         return updatedTrades;
       });
     }
-  }, [assetMap, isTradeLive, originalBalance]);
+  }, [assetMap, isTradeLive, originalBalance, isVerified]);
 
   // fetch current open trades
   useEffect(() => {
-    const fetchActiveTrades = async () => {
-      const response_orders = await axios.get(
-        `${BACKEND_URL}/api/v1/orders/get-orders/`,
-        {
-          headers : {
-            Authorization: token
-          }
-        }
-      );
-      
-      const tradesData = Array.isArray(response_orders.data) ? response_orders.data : [];
-      
-      setActiveTrades(tradesData);
+    // Only fetch trades if user is verified
+    if (isVerified !== true) return;
 
-      if (tradesData.length > 0) {
-        setIsTradeLive(true);
-      } else {
-        setIsTradeLive(false);
-        setBalance(originalBalance);
+    const fetchActiveTrades = async () => {
+      try {
+        const response_orders = await axios.get(
+          `${BACKEND_URL}/api/v1/orders/get-orders/`,
+          {
+            headers : {
+              Authorization: token
+            }
+          }
+        );
+        
+        const tradesData = Array.isArray(response_orders.data) ? response_orders.data : [];
+        
+        setActiveTrades(tradesData);
+
+        if (tradesData.length > 0) {
+          setIsTradeLive(true);
+        } else {
+          setIsTradeLive(false);
+          setBalance(originalBalance);
+        }
+      } catch (error) {
+        console.error('Failed to fetch active trades:', error);
+        // If trades fetch fails due to auth, redirect to signin
+        navigate('/signin');
       }
     };
 
@@ -119,7 +147,7 @@ const Home = () => {
     const interval = setInterval(fetchActiveTrades, 1000);
 
     return () => clearInterval(interval);
-  }, [BACKEND_URL, userId, originalBalance]);
+  }, [BACKEND_URL, userId, originalBalance, isVerified, token, navigate]);
 
   const changeAsset = (newAsset: string) => {
     asset.current = newAsset
@@ -131,86 +159,111 @@ const Home = () => {
 
   // open a trade
   const executeOrder = async (volume: number, leverage: number, takeProfit: number | null, stopLoss: number | null) => {
-    const body = {
-      userId: userId,
-      type: tradeType,
-      volume: volume,
-      asset: asset.current,
-      leverage: leverage,
-      takeProfit: takeProfit,
-      stopLoss: stopLoss
-    };
+    try {
+      const body = {
+        userId: userId,
+        type: tradeType,
+        volume: volume,
+        asset: asset.current,
+        leverage: leverage,
+        takeProfit: takeProfit,
+        stopLoss: stopLoss
+      };
 
-    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/open/`, body, {
-          headers : {
-            Authorization: token
+      const response = await axios.post(`${BACKEND_URL}/api/v1/orders/open/`, body, {
+            headers : {
+              Authorization: token
+            }
           }
+        );
+      const data = response.data;
+
+      if (data.message && !data.orderId) {
+          setErrorMsg(data.message);
+          return;
         }
-      );
-    const data = response.data;
 
-    if (data.message && !data.orderId) {
-        setErrorMsg(data.message);
-        return;
-      }
+      setErrorMsg("");
+      setBalance(data.balance);
+      setOriginalBalance(data.balance);
+      setIsTradeLive(true);
 
-    setErrorMsg("");
-    setBalance(data.balance);
-    setOriginalBalance(data.balance);
-    setIsTradeLive(true);
+      // Backend now returns prices already converted to decimals
+      const currentTrade: ActiveTradeType = {
+        orderId: data.orderId,
+        asset: asset.current,
+        type: tradeType,
+        open_price: data.open_price,
+        current_price: data.current_price,
+        volume: volume,
+        pnl: tradeType === "Buy" 
+          ? (data.current_price - data.open_price) * volume
+          : (data.open_price - data.current_price) * volume,
+        stopLoss: stopLoss,
+        takeProfit: takeProfit
+      };
 
-    // Backend now returns prices already converted to decimals
-    const currentTrade: ActiveTradeType = {
-      orderId: data.orderId,
-      asset: asset.current,
-      type: tradeType,
-      open_price: data.open_price,
-      current_price: data.current_price,
-      volume: volume,
-      pnl: tradeType === "Buy" 
-        ? (data.current_price - data.open_price) * volume
-        : (data.open_price - data.current_price) * volume,
-      stopLoss: stopLoss,
-      takeProfit: takeProfit
-    };
-
-    setActiveTrades((prev) => {
-      const currentTrades = Array.isArray(prev) ? prev : [];
-      return [...currentTrades, currentTrade];
-    });
+      setActiveTrades((prev) => {
+        const currentTrades = Array.isArray(prev) ? prev : [];
+        return [...currentTrades, currentTrade];
+      });
+    } catch (error) {
+      console.error('Failed to execute order:', error);
+      setErrorMsg('Failed to execute order');
+    }
   };
 
   // close a trade
   const closeOrder = async (orderId: number) => {
-    const body = {
-      orderId: orderId,
-    };
+    try {
+      const body = {
+        orderId: orderId,
+      };
 
-    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/close/`, body, {
-          headers : {
-            Authorization: token
+      const response = await axios.post(`${BACKEND_URL}/api/v1/orders/close/`, body, {
+            headers : {
+              Authorization: token
+            }
           }
+        );
+      const data = response.data;
+
+      setActiveTrades((prev) => {
+        const currentTrades = Array.isArray(prev) ? prev : [];
+        return currentTrades.filter((trade) => trade.orderId !== orderId);
+      });
+
+      const newBalance = Number(data.message);
+      setBalance(newBalance);
+      setOriginalBalance(newBalance);
+
+      setActiveTrades((prev) => {
+        const remaining = Array.isArray(prev) ? prev.filter(trade => trade.orderId !== orderId) : [];
+        if (remaining.length === 0) {
+          setIsTradeLive(false);
         }
-      );
-    const data = response.data;
-
-    setActiveTrades((prev) => {
-      const currentTrades = Array.isArray(prev) ? prev : [];
-      return currentTrades.filter((trade) => trade.orderId !== orderId);
-    });
-
-    const newBalance = Number(data.message);
-    setBalance(newBalance);
-    setOriginalBalance(newBalance);
-
-    setActiveTrades((prev) => {
-      const remaining = Array.isArray(prev) ? prev.filter(trade => trade.orderId !== orderId) : [];
-      if (remaining.length === 0) {
-        setIsTradeLive(false);
-      }
-      return remaining;
-    });
+        return remaining;
+      });
+    } catch (error) {
+      console.error('Failed to close order:', error);
+      // If close order fails due to auth, redirect to signin
+      navigate('/signin');
+    }
   };
+
+  // Show loading spinner while verifying
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-xl">Verifying user...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not verified (user will be redirected)
+  if (isVerified === false) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-screen">

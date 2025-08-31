@@ -25,7 +25,7 @@ export const authMiddleware = (req:Request, res:Response, next: NextFunction) =>
         const decoded = jwt.verify(token, JWT_SECRET) as MyJwtPayload
         const user = Users.find(u => u.id === decoded.userId)
 
-        console.log('mid', user)
+        // console.log('mid', user)
         if (!user) {
             res.json({
                 success: false,

@@ -97,3 +97,23 @@ userRouter.get('/balance', authMiddleware, (req, res) => {
 
     res.json({ balance: user.balances.USD });
 })
+
+
+userRouter.get('/verify', authMiddleware, (req, res) => {
+    const userId = req.userId
+    console.log(`GET: /api/v1/user/verify/`)
+
+    const user = Users.find(u => u.id === userId)
+
+    if (!user) {
+        return res.json({
+            success: false,
+            message: "verification failed"
+        })
+    }
+
+    return res.json({
+        success: true,
+        message: "verifcation successfull"
+    })
+})
