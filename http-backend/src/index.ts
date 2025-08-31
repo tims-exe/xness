@@ -39,6 +39,8 @@ let openTradeId = 0;
 app.get("/api/v1/candles", authMiddleware, async (req, res) => {
   const { asset, ts } = req.query;
 
+  console.log('GET: /api/v1/candles')
+
   if (!asset || !ts) {
     return res.status(400).json({ error: "missing query params" });
   }
@@ -61,6 +63,7 @@ app.get("/api/v1/candles", authMiddleware, async (req, res) => {
         close_price: Number(r.close_price),
         high_price: Number(r.high_price),
         low_price: Number(r.low_price),
+        max_decimals: Number(r.max_decimals)
     }));
 
     return res.json(candles);

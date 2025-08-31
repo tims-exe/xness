@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -53,7 +53,6 @@ const Signin = () => {
       
       if (data.success && data.token) {
         localStorage.setItem('token', data.token);
-        alert('Sign in successful!');
         navigate('/home');
       } else {
         alert(data.message || 'Sign in failed');
@@ -75,8 +74,7 @@ const Signin = () => {
       
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-light text-gray-800">Welcome back</h2>
-          <p className="text-gray-600 mt-2">Sign in to your xness account</p>
+          <h2 className="text-3xl font-semibold text-gray-800">Sign In</h2>
         </div>
         
         <div className="space-y-6">
@@ -84,14 +82,14 @@ const Signin = () => {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-green-500"
           />
           <input
             type="password"
             placeholder="Password"
             value={password}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:border-green-500"
           />
           <button

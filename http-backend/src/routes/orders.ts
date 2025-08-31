@@ -111,7 +111,7 @@ tradesRouter.post('/open', (req, res) => {
 
     return res.json({
         orderId: openTradeId,
-        // balance: user.balances.USD,
+        balance: user.balances.USD,
         open_price: openPrice / Math.pow(10, currentAsset.decimal), 
         current_price: currentPrice / Math.pow(10, currentAsset.decimal),
         margin: margin,
@@ -126,8 +126,9 @@ tradesRouter.post('/open', (req, res) => {
 // close order (buy/sell)
 tradesRouter.post("/close", async (req, res) => {
     console.log("POST: /api/close");
-    console.log(req.body)
-    const { userId, orderId } = req.body
+    //console.log(req.body)
+    const { orderId } = req.body
+    const userId = req.userId
 
     const currentTrade = OpenTrades.find(t => t.orderId === orderId)
     const currentAsset = Assets.find(a => a.symbol === currentTrade?.asset)!

@@ -6,7 +6,7 @@ const Navbar = ({balance} : { balance:number }) => {
           xness
         </p>
         <div className="font-semibold text-xl bg-neutral-400 rounded-md py-2 px-3">
-          {balance.toFixed(3)}
+          {balance.toFixed(2)}
         </div>
       </div>
       <div className="px-10">

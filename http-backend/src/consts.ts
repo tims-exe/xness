@@ -1,16 +1,16 @@
 import { AssetData, OpenTradesTypes, UserType } from "./types/main";
 
-export const Users: UserType[] = [
-    {
-        id: "1",
-        email: "test@gmail.com",
-        password: "test123",
-        balances: {
-            "USD": 5000
-        },
-        usedMargin: 0
-    }
-];
+
+// {
+//     id: "1",
+//     email: "test@gmail.com",
+//     password: "test123",
+//     balances: {
+//         "USD": 5000
+//     },
+//     usedMargin: 0
+// }
+export const Users: UserType[] = [];
 
 
 

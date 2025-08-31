@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import TradeChart from './TradeChart';
 import type { TimePeriod, TradeData } from '../types/main-types';
-import type { CandlestickData, Time } from 'lightweight-charts';
+import type { CandlestickData, UTCTimestamp } from 'lightweight-charts';
 import axios from 'axios';
 
 const TIME_PERIODS: TimePeriod[] = [
@@ -16,13 +16,21 @@ const ChartView = ({asset} : {asset : string}) => {
     const [trades, setTrades] = useState<TradeData[]>([]);
     const [selectedTimePeriod, setSelectedTimePeriod] = useState("1m");
 
+    const token = localStorage.getItem("token")
+
     // get trade history (chart)
     useEffect(() => {
         const fetchTrades = async () => {
-            console.log(asset, selectedTimePeriod)
+            //console.log(asset, selectedTimePeriod)
             const response = await axios.get(
-                `${BACKEND_URL}/api/v1/candles?asset=${asset}&ts=${selectedTimePeriod}`
+                `${BACKEND_URL}/api/v1/candles?asset=${asset}&ts=${selectedTimePeriod}`, {
+                headers : {
+                    Authorization: token
+                }
+            }
             );
+
+            //console.log(response.data)
             setTrades(response.data || []); 
             //console.log(response.data)
         };
@@ -36,11 +44,11 @@ const ChartView = ({asset} : {asset : string}) => {
 
     const transformToCandles = (tradeData: TradeData[]): CandlestickData[] => {
         return tradeData.map(trade => ({
-            time: trade.timestamp as Time,
-            open: trade.open_price,   
-            high: trade.high_price,   
-            low: trade.low_price,    
-            close: trade.close_price   
+            time: Math.floor(Number(trade.timestamp)) as UTCTimestamp,
+            open: trade.open_price / Math.pow(10, trade.max_decimals),   
+            high: trade.high_price / Math.pow(10, trade.max_decimals),   
+            low: trade.low_price / Math.pow(10, trade.max_decimals),    
+            close: trade.close_price / Math.pow(10, trade.max_decimals), 
         })).sort((a, b) => (a.time as number) - (b.time as number));
     };
 

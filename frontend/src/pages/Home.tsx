@@ -23,11 +23,18 @@ const Home = () => {
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+  const token = localStorage.getItem("token")!
+
   // get user balance 
   useEffect(() => {
     const fetchData = async () => {
       const response_balance = await axios.get(
-        `${BACKEND_URL}/api/v1/user/balance/`
+        `${BACKEND_URL}/api/v1/user/balance`,
+        {
+          headers : {
+            Authorization: token
+          }
+        }
       );
       setBalance(response_balance.data.balance);
       setOriginalBalance(response_balance.data.balance);
@@ -66,7 +73,7 @@ const Home = () => {
             ? (currentPrice - trade.open_price) * trade.volume
             : (trade.open_price - currentPrice) * trade.volume;
 
-          console.log(currentPrice, trade.open_price, current_pnl)
+          //console.log(currentPrice, trade.open_price, current_pnl)
           return {
             ...trade,
             current_price: currentPrice,
@@ -88,7 +95,12 @@ const Home = () => {
   useEffect(() => {
     const fetchActiveTrades = async () => {
       const response_orders = await axios.get(
-        `${BACKEND_URL}/api/v1/orders/get-orders/`
+        `${BACKEND_URL}/api/v1/orders/get-orders/`,
+        {
+          headers : {
+            Authorization: token
+          }
+        }
       );
       
       const tradesData = Array.isArray(response_orders.data) ? response_orders.data : [];
@@ -129,7 +141,12 @@ const Home = () => {
       stopLoss: stopLoss
     };
 
-    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/open/`, body);
+    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/open/`, body, {
+          headers : {
+            Authorization: token
+          }
+        }
+      );
     const data = response.data;
 
     if (data.message && !data.orderId) {
@@ -166,11 +183,15 @@ const Home = () => {
   // close a trade
   const closeOrder = async (orderId: number) => {
     const body = {
-      userId: userId,
       orderId: orderId,
     };
 
-    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/close/`, body);
+    const response = await axios.post(`${BACKEND_URL}/api/v1/orders/close/`, body, {
+          headers : {
+            Authorization: token
+          }
+        }
+      );
     const data = response.data;
 
     setActiveTrades((prev) => {

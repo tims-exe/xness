@@ -35,7 +35,7 @@ userRouter.post('/signup', (req, res) => {
         usedMargin: 0
     })
 
-    console.log(Users)
+    //console.log(Users)
 
     return res.status(200).json({
         sucess: true,
@@ -61,6 +61,8 @@ userRouter.post('/signin', (req, res) => {
 
     const user = Users.find(u => u.email === email && u.password === password);
 
+    // console.log(user)
+
     if (!user) {
         return res.status(401).json({
             success: false,
@@ -81,10 +83,13 @@ userRouter.post('/signin', (req, res) => {
 
 
 userRouter.get('/balance', authMiddleware, (req, res) => {
-    const userId = req.params.id
+    // console.log('params : ',req.params)
+    const userId = req.userId
     console.log(`GET: /api/v1/user/balance/`)
 
     const user = Users.find(u => u.id === userId);
+
+    // console.log(user)
 
     if (!user) {
         return res.status(404).json({ error: "User not found" });

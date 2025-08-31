@@ -28,7 +28,6 @@ const Signup = () => {
       const data = response.data;
       
       if (data.sucess && data.userId) {
-        alert('Account created successfully! Please sign in.');
         navigate('/signin');
       } else {
         alert(data.message || 'Sign up failed');
@@ -50,8 +49,7 @@ const Signup = () => {
       
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-light text-gray-800">Create account</h2>
-          <p className="text-gray-600 mt-2">Join xness today</p>
+          <h2 className="text-3xl font-semibold text-gray-800">Create an account</h2>
         </div>
         
         <div className="space-y-6">

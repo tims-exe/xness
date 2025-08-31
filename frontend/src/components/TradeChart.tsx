@@ -72,18 +72,19 @@ const TradeChart = ({
                 horzLines: { color: 'rgba(197, 203, 206, 0.5)' },
             },
             timeScale: {
-                borderColor: '#485c7b',
-                timeVisible: false,
-                secondsVisible: false,
-                tickMarkFormatter: (time: number) => {
-                    const date = new Date(time * 1000);
-                    return date.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: false 
-                    });
-                },
+            borderColor: '#485c7b',
+            timeVisible: true,    
+            secondsVisible: false,
+            tickMarkFormatter: (time: UTCTimestamp) => {
+                const date = new Date(time * 1000);
+                return date.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
             },
+        },
+
             rightPriceScale: {
                 borderColor: '#485c7b',
             },

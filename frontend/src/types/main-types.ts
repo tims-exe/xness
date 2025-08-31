@@ -37,6 +37,7 @@ export interface TradeData {
     close_price: number
     high_price: number
     low_price: number 
+    max_decimals: number
 }
 
 export interface ActiveTradeType {
