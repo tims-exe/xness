@@ -1,18 +1,45 @@
-import { useState } from "react"
+import { useState, useEffect, type RefObject } from "react"
+import { useSocket } from "../hooks/useSocket"
 
 interface TradeSectionProp {
     handleOrder : (volume: number, leverage: number, takeProfit: number | null, stopLoss: number | null ) => void
     errorMsg: string
     tradeType: "Buy" | "Sell"
     handleTradeType: (type: "Buy" | "Sell") => void
+    asset: RefObject<string>
 }
 
-const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : TradeSectionProp) => {
+const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType, asset} : TradeSectionProp) => {
   const [volume, setVolume] = useState("");
-  const [leverage, setLeverage] = useState("");
+  const [leverage, setLeverage] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
   const [takeProfit, setTakeProfit] = useState("");
   const [stopLoss, setStopLoss] = useState("");
+  const [margin, setMargin] = useState(0);
+
+  const { assetMap } = useSocket();
+  
+  const currentAsset = assetMap.find(a => a.symbol === asset.current)
+  let currentPrice = null;
+  if (currentAsset){
+    currentPrice = tradeType === "Buy" ? currentAsset.buy / Math.pow(10, currentAsset.decimal): currentAsset.sell / Math.pow(10, currentAsset.decimal)
+  }
+
+  useEffect(() => {
+    if (volume && currentPrice) {
+      const volumeNum = parseFloat(volume);
+      const leverageNum = leverage ? parseFloat(leverage) : 1;
+      
+      if (!isNaN(volumeNum) && !isNaN(leverageNum) && leverageNum > 0) {
+        const calculatedMargin = (volumeNum * currentPrice) / leverageNum;
+        setMargin(calculatedMargin);
+      } else {
+        setMargin(0);
+      }
+    } else {
+      setMargin(0);
+    }
+  }, [volume, leverage, currentPrice]);
 
   const handleConfirm = async () => {
     if (volume === "") {
@@ -26,7 +53,7 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
     setIsLoading(true);
     try {
       setVolume("")
-      setLeverage("")
+      setLeverage("1")
       setStopLoss("")
       setTakeProfit("")
       handleOrder(Number(volume), currentLev, currentTP, currentSL);
@@ -40,7 +67,7 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
   return (
     <div className="flex flex-col mr-10 mt-10 ">
         <p className="font-bold text-2xl mb-5">Trade</p>
-        <div className="flex gap-5 mb-10">
+        <div className="flex gap-5 mb-5">
             <button onClick={() => handleTradeType("Buy")}
             className={`flex-1 py-3 rounded-2xl hover:cursor-pointer transition-all duration-200 ${
                 tradeType === "Buy"
@@ -79,19 +106,17 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
         </p>
         <div className="flex gap-5 items-center font-semibold">
             <p className="flex-1">Leverage</p>
-            <input  
-            type="text"
-            inputMode="decimal"
-            pattern="[0-9]*\.?[0-9]*"
+            <select
             value={leverage}
-            onChange={(e) => {
-                const val = e.target.value;
-                if (/^\d*\.?\d*$/.test(val)) {
-                    setLeverage(val === "" ? "" : val.toString());
-                }
-            }}
-            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
-            />
+            onChange={(e) => setLeverage(e.target.value)}
+            className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1 bg-white"
+            >
+                <option value="1">1x</option>
+                <option value="5">5x</option>
+                <option value="10">10x</option>
+                <option value="20">20x</option>
+                <option value="100">100x</option>
+            </select>
         </div>
         <div className="flex gap-5 items-center font-semibold mt-2">
             <p className="flex-1">Take Profit</p>
@@ -124,6 +149,10 @@ const TradeSection = ({handleOrder, errorMsg, tradeType, handleTradeType} : Trad
             }}
             className="border-2 border-neutral-400 w-full rounded-md px-2 py-3 flex-1" 
             />
+        </div>
+        <div className="gap-5 items-center font-semibold mt-2 self-end text-neutral-500 flex">
+            <p className="">Margin :</p>
+            <p className="">{margin.toFixed(2)}</p>
         </div>
         <div className="mx-10">
             <button 

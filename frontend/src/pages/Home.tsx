@@ -24,6 +24,7 @@ const Home = () => {
   const [tradeType, setTradeType] = useState<"Buy" | "Sell">("Buy");
   const [activeTrades, setActiveTrades] = useState<ActiveTradeType[]>([]);
 
+
   const userId = 1;
 
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -281,7 +282,7 @@ const Home = () => {
               />
             </div>
             <div className="flex-1">
-              <TradeSection handleOrder={executeOrder} errorMsg={errorMsg} tradeType={tradeType} handleTradeType={handleTradeType}/>
+              <TradeSection handleOrder={executeOrder} errorMsg={errorMsg} tradeType={tradeType} handleTradeType={handleTradeType} asset={asset}/>
             </div>
           </div>
           <ActiveTrades trades={activeTrades} closeOrder={closeOrder} />
