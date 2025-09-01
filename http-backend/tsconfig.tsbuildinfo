@@ -1,1 +1,1 @@
-{"root":["./src/consts.ts","./src/index.ts","./src/pricesubscriber.ts","./src/config/db.ts","./src/routes/authmiddleware.ts","./src/routes/orders.ts","./src/routes/user.ts","./src/types/express.d.ts","./src/types/main.ts"],"version":"5.8.3"}
+{"root":["./src/consts.ts","./src/index.ts","./src/pricesubscriber.ts","./src/config/db.ts","./src/config/redis.ts","./src/routes/authmiddleware.ts","./src/routes/orders.ts","./src/routes/user.ts","./src/types/express.d.ts","./src/types/main.ts"],"version":"5.8.3"}

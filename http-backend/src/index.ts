@@ -19,7 +19,7 @@ const priceSubscriber = new PriceSubscriber(Assets);
 
 
 try {
-    await priceSubscriber.connect()
+    await priceSubscriber.connect() 
     console.log('connected to pubsub')
 } catch (error) {
     console.log('error starting server', error)

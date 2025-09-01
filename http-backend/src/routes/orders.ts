@@ -1,7 +1,8 @@
 import express from 'express'
 import { Assets, OpenTrades } from '../consts.js'
 import { pool } from '../config/db.js';
-
+import { redisClient } from '../config/redis.js';
+import { AssetData } from '../types/main.js';
 
 export const tradesRouter = express.Router()
 
@@ -83,7 +84,7 @@ tradesRouter.post('/open', async (req, res) => {
 
     // fetch user
     const result = await pool.query(
-        `SELECT id, balance, used_margin FROM users WHERE id = $1`,
+        `SELECT id, email, balance, used_margin FROM users WHERE id = $1`,
         [userId]
     )
 
@@ -129,6 +130,17 @@ tradesRouter.post('/open', async (req, res) => {
         pnl: (currentAsset.sell - currentAsset.buy) * volume,
         takeProfit,
         stopLoss
+    })
+
+    const emailBody = createEmail(asset, type, volume, openPrice, currentAsset, leverage, margin)
+
+    console.log(emailBody)
+
+    // push to redis stream
+    await redisClient.xAdd('trades_stream', '*', {
+        recipient: user.email,
+        subject: 'Trade Confirmation',
+        body: emailBody
     })
 
     return res.json({
@@ -190,3 +202,23 @@ tradesRouter.post("/close", async (req, res) => {
 
     return res.json({ success: false, message: "no trade" })
 })
+
+
+function createEmail(asset: string, type: "Buy" | "Sell", volume: number, openPrice: number, currentAsset: AssetData , leverage: number, margin: number) {
+    const emailBody = `
+        <p>Hi,</p>
+        <p>Your trade has been opened successfully:</p>
+        <ul>
+        <li><strong>Asset:</strong> ${asset}</li>
+        <li><strong>Type:</strong> ${type}</li>
+        <li><strong>Volume:</strong> ${volume}</li>
+        <li><strong>Open Price:</strong> ${openPrice / Math.pow(10, currentAsset.decimal)}</li>
+        <li><strong>Leverage:</strong> ${leverage}x</li>
+        <li><strong>Margin Used:</strong> ${margin}</li>
+        </ul>
+        <br/>
+        <p>— xness</p>
+    `
+
+    return emailBody
+}

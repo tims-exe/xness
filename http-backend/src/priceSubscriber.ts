@@ -2,9 +2,10 @@ import { createClient } from 'redis'
 import { AssetData, IncomingAssetData, OpenTradesTypes } from './types/main.js'
 import { OpenTrades } from './consts.js';
 import { pool } from './config/db.js';
+import { redisClient } from './config/redis.js';
 
 export class PriceSubscriber {
-    private subscriber = createClient()
+    private subscriber = redisClient.duplicate();
 
     private assets: AssetData[] = []
 
