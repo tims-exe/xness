@@ -2,7 +2,7 @@ import { AssetData, OpenTradesTypes, UserType } from "./types/main";
 
 
 // {
-//     id: "1",
+//     id: uuid
 //     email: "test@gmail.com",
 //     password: "test123",
 //     balances: {
@@ -10,7 +10,7 @@ import { AssetData, OpenTradesTypes, UserType } from "./types/main";
 //     },
 //     usedMargin: 0
 // }
-export const Users: UserType[] = [];
+// export const Users: UserType[] = [];
 
 
 

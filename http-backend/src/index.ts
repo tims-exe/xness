@@ -2,28 +2,21 @@ import express from 'express';
 import { Pool } from 'pg';
 import dotenv from 'dotenv'
 import cors from 'cors';
-import { Users, OpenTrades, Assets } from "./consts.js";
+import { OpenTrades, Assets } from "./consts.js";
 import { AssetData, IncomingAssetData } from './types/main.js';
 import { PriceSubscriber } from './priceSubscriber.js';
 import { tradesRouter } from './routes/orders.js';
 import { userRouter } from './routes/user.js';
 import { authMiddleware } from './routes/authMiddleware.js';
+import { pool } from './config/db.js';
 
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-const pool = new Pool({
-    user: "postgres",
-    host: "localhost",
-    database: "xness",
-    password: process.env.DB_PASSWORD,
-    port: 5432,
-})
-
-
 const priceSubscriber = new PriceSubscriber(Assets);
+
 
 try {
     await priceSubscriber.connect()

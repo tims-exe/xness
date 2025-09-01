@@ -1,7 +1,7 @@
 import jwt, { JwtPayload } from 'jsonwebtoken'
-import { Users } from '../consts.js'
 import { NextFunction, Request, Response } from 'express'
 import dotenv from 'dotenv'
+import { pool } from '../config/db.js'   
 
 dotenv.config()
 
@@ -11,7 +11,7 @@ interface MyJwtPayload extends JwtPayload {
     userId: string
 }
 
-export const authMiddleware = (req:Request, res:Response, next: NextFunction) => {
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')
 
     if (!token) {
@@ -23,25 +23,27 @@ export const authMiddleware = (req:Request, res:Response, next: NextFunction) =>
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as MyJwtPayload
-        const user = Users.find(u => u.id === decoded.userId)
 
-        // console.log('mid', user)
-        if (!user) {
-            res.json({
+        const result = await pool.query(
+            `SELECT id FROM users WHERE id = $1`,
+            [decoded.userId]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({
                 success: false,
                 message: "error validating user"
             })
-            return
         }
-        req.userId = user.id
-        next();
+
+        req.userId = decoded.userId
+        next()
 
     } catch (error) {
-        console.log(error)
-        res.status(401).json({
+        console.error(error)
+        return res.status(401).json({
             success: false,
-            message: "token no valid"
+            message: "token not valid"
         })
     }
-
 }

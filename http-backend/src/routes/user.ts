@@ -1,15 +1,15 @@
 import express from 'express'
 import { authMiddleware } from './authMiddleware.js'
-import { Users } from '../consts.js'
 import { v4 as uuidv4 } from "uuid";
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { pool } from '../config/db.js';
 dotenv.config()
 
 export const userRouter = express.Router()
 
 
-userRouter.post('/signup', (req, res) => {
+userRouter.post('/signup', async (req, res) => {
     const { email, password } = req.body
     console.log(`POST: /api/v1/user/signup/`)
 
@@ -19,33 +19,27 @@ userRouter.post('/signup', (req, res) => {
             message: "provide email and password"
         })
     }
+    try {
+        const result = await pool.query(
+            `INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id, email, balance, used_margin`
+        , [email, password])
+        return res.json({
+            success: true,
+            userId: result.rows[0].id
+        })
+    } catch (error) {
+        console.log(error)
+    }
 
-    let newId: string 
-    do {
-        newId = uuidv4();
-    } while (Users.some(u => u.id === newId))
-
-    Users.push({ 
-        id: newId,
-        email: email,
-        password: password,
-        balances: {
-            "USD" : 5000
-        },
-        usedMargin: 0
-    })
-
-    //console.log(Users)
-
-    return res.status(200).json({
-        sucess: true,
-        userId: newId
+    return res.json({
+        success: false,
+        message: "error"
     })
 })
 
 
 
-userRouter.post('/signin', (req, res) => {
+userRouter.post('/signin', async (req, res) => {
     const { email, password } = req.body;
     console.log(`POST: /api/v1/user/signin/`)
 
@@ -59,16 +53,18 @@ userRouter.post('/signin', (req, res) => {
         });
     }
 
-    const user = Users.find(u => u.email === email && u.password === password);
+    const result = await pool.query(
+        `SELECT * FROM users WHERE email = $1 AND password = $2`
+    , [email, password])
 
-    // console.log(user)
-
-    if (!user) {
+    if (result.rows.length === 0) {
         return res.status(401).json({
             success: false,
             message: "invalid credentials"
-        });
+        })
     }
+
+    const user = result.rows[0]
 
     const token = jwt.sign({
         userId : user.id
@@ -82,38 +78,33 @@ userRouter.post('/signin', (req, res) => {
 })
 
 
-userRouter.get('/balance', authMiddleware, (req, res) => {
+userRouter.get('/balance', authMiddleware, async (req, res) => {
     // console.log('params : ',req.params)
     const userId = req.userId
     console.log(`GET: /api/v1/user/balance/`)
 
-    const user = Users.find(u => u.id === userId);
+    const result = await pool.query(
+        `SELECT * FROM users WHERE id = $1`
+    , [userId])
 
-    // console.log(user)
-
-    if (!user) {
-        return res.status(404).json({ error: "User not found" });
+    if (result.rows.length === 0) {
+        return res.status(401).json({
+            success: false,
+            message: "invalid credentials"
+        })
     }
 
-    res.json({ balance: user.balances.USD });
+    const user = result.rows[0]
+
+    res.json({ balance: user.balance });
 })
 
 
 userRouter.get('/verify', authMiddleware, (req, res) => {
-    const userId = req.userId
     console.log(`GET: /api/v1/user/verify/`)
-
-    const user = Users.find(u => u.id === userId)
-
-    if (!user) {
-        return res.json({
-            success: false,
-            message: "verification failed"
-        })
-    }
 
     return res.json({
         success: true,
-        message: "verifcation successfull"
+        message: "verification successful"
     })
 })

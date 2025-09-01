@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 interface SignupResponse {
-  sucess: boolean; // Note: keeping the typo from your backend
+  success: boolean; 
   userId?: string;
   message?: string;
 }
@@ -29,8 +29,10 @@ const Signup = () => {
       });
       
       const data = response.data;
+
+      console.log(data.success, data.userId)
       
-      if (data.sucess && data.userId) {
+      if (data.success && data.userId) {
         navigate('/signin');
       } else {
         alert(data.message || 'Sign up failed');

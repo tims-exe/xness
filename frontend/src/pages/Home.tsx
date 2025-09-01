@@ -51,8 +51,9 @@ const Home = () => {
             }
           }
         );
-        setBalance(response_balance.data.balance);
-        setOriginalBalance(response_balance.data.balance);
+
+        setBalance(Number(response_balance.data.balance));
+        setOriginalBalance(Number(response_balance.data.balance));
       } catch (error) {
         console.error('Failed to fetch balance:', error);
         // If balance fetch fails due to auth, redirect to signin
@@ -185,11 +186,11 @@ const Home = () => {
         }
 
       setErrorMsg("");
-      setBalance(data.balance);
-      setOriginalBalance(data.balance);
+      setBalance(Number(data.balance));
+      setOriginalBalance(Number(data.balance));
       setIsTradeLive(true);
 
-      // Backend now returns prices already converted to decimals
+
       const currentTrade: ActiveTradeType = {
         orderId: data.orderId,
         asset: asset.current,
@@ -214,7 +215,6 @@ const Home = () => {
     }
   };
 
-  // close a trade
   const closeOrder = async (orderId: number) => {
     try {
       const body = {
@@ -229,14 +229,24 @@ const Home = () => {
         );
       const data = response.data;
 
+      if (!data.success){
+        console.log(data.message)
+        return
+      }
+
+      const closedTrade = activeTrades.find(trade => trade.orderId === orderId);
+    
+      if (closedTrade) {
+        const finalPnL = closedTrade.pnl || 0;
+        const newBalance = originalBalance + finalPnL;
+        setBalance(newBalance);
+        setOriginalBalance(newBalance);
+      }
+
       setActiveTrades((prev) => {
         const currentTrades = Array.isArray(prev) ? prev : [];
         return currentTrades.filter((trade) => trade.orderId !== orderId);
       });
-
-      const newBalance = Number(data.message);
-      setBalance(newBalance);
-      setOriginalBalance(newBalance);
 
       setActiveTrades((prev) => {
         const remaining = Array.isArray(prev) ? prev.filter(trade => trade.orderId !== orderId) : [];

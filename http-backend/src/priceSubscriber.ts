@@ -1,6 +1,7 @@
 import { createClient } from 'redis'
 import { AssetData, IncomingAssetData, OpenTradesTypes } from './types/main.js'
-import { OpenTrades, Users } from './consts.js';
+import { OpenTrades } from './consts.js';
+import { pool } from './config/db.js';
 
 export class PriceSubscriber {
     private subscriber = createClient()
@@ -44,12 +45,22 @@ export class PriceSubscriber {
         })
     }
 
-    private processOpenTrades(latestTrade: IncomingAssetData) {
+    private async processOpenTrades(latestTrade: IncomingAssetData) {
         for (let i = OpenTrades.length - 1; i >= 0; i--) {
             const trade = OpenTrades[i]
-            const user = Users.find(u => u.id === trade.userId)
+            // const user = Users.find(u => u.id === trade.userId)
 
-            if (!user || trade.asset !== latestTrade.asset) continue
+            const result = await pool.query(
+                `SELECT * FROM users WHERE id = $1`
+            , [trade.userId])
+
+            if (result.rows.length === 0) {
+                console.log(`User not found for trade ${trade.userId}`);
+                continue;
+            }
+            const user = result.rows[0]
+
+            if (trade.asset !== latestTrade.asset) continue
 
             const currentAsset = this.assets.find(a => a.symbol === latestTrade.asset)!
 
@@ -73,7 +84,10 @@ export class PriceSubscriber {
 
             // liquidation
             if (trade.pnl / Math.pow(10, currentAsset.decimal) <= -trade.margin) {
-                user.usedMargin -= trade.margin
+                await pool.query(
+                    `UPDATE users SET used_margin = used_margin - $1 WHERE id = $2`,
+                    [trade.margin, trade.userId]
+                );
                 OpenTrades.splice(i, 1)
                 console.log('liquidated')
             }
@@ -115,9 +129,16 @@ export class PriceSubscriber {
         }
     }
 
-    private closeTrade(index: number, trade: OpenTradesTypes, user: any, currentAsset: AssetData) {
-        user.balance.USD += trade.pnl / Math.pow(10, currentAsset.decimal)
-        user.usedMargin -= trade.margin
+    private async closeTrade(index: number, trade: OpenTradesTypes, user: any, currentAsset: AssetData) {
+        const pnl = trade.pnl / Math.pow(10, currentAsset.decimal);
+
+        await pool.query(
+            `UPDATE users 
+            SET balance = balance + $1, used_margin = used_margin - $2
+            WHERE id = $3`,
+            [pnl, trade.margin, trade.userId]
+        );
+
         OpenTrades.splice(index, 1)
         console.log("trade closed : ", trade.type, trade.asset)
     }

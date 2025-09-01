@@ -1,5 +1,6 @@
 import express from 'express'
-import { Assets, OpenTrades, Users } from '../consts.js'
+import { Assets, OpenTrades } from '../consts.js'
+import { pool } from '../config/db.js';
 
 
 export const tradesRouter = express.Router()
@@ -15,14 +16,22 @@ tradesRouter.get('/', (req, res) => {
 
 
 // get current open orders
-tradesRouter.get("/get-orders", (req, res) => {
+tradesRouter.get("/get-orders", async (req, res) => {
   const userId = req.userId
 
-  const user = Users.find(u => u.id === userId);
+  const result = await pool.query(
+        `SELECT id FROM users WHERE id = $1`,
+        [userId]
+    )
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
+    if (result.rows.length === 0) {
+        return res.status(401).json({
+            success: false,
+            message: "error validating user"
+        })
+    }
+
+    const user = result.rows[0]
 
   if (OpenTrades.length > 0) {
     const activeTrades = OpenTrades.map((trade) => {
@@ -59,7 +68,7 @@ tradesRouter.get("/get-orders", (req, res) => {
 
 
 // open order (buy/sell)
-tradesRouter.post('/open', (req, res) => {
+tradesRouter.post('/open', async (req, res) => {
     console.log("POST: /api/open");
 
     const userId = req.userId!
@@ -72,18 +81,31 @@ tradesRouter.post('/open', (req, res) => {
     const position_value = volume * currentBuy
     const margin = position_value / leverage
 
-    const user = Users.find(u => u.id === userId)!
+    // fetch user
+    const result = await pool.query(
+        `SELECT id, balance, used_margin FROM users WHERE id = $1`,
+        [userId]
+    )
 
-    const freeMargin = user.balances.USD - user.usedMargin
-    console.log(freeMargin, margin, freeMargin < margin)
-
-    if (freeMargin < margin) {
-        return res.json({
-            message: "insufficient balance"
+    if (result.rows.length === 0) {
+        return res.status(401).json({
+            success: false,
+            message: "error validating user"
         })
     }
 
-    user.usedMargin += margin
+    const user = result.rows[0]
+
+    const freeMargin = user.balance - user.used_margin
+    if (freeMargin < margin) {
+        return res.json({ message: "insufficient balance" })
+    }
+
+    // update DB with new used_margin
+    await pool.query(
+        `UPDATE users SET used_margin = used_margin + $1 WHERE id = $2`,
+        [margin, userId]
+    )
 
     // Store prices as big integers
     let openPrice: number = currentAsset.buy
@@ -97,28 +119,27 @@ tradesRouter.post('/open', (req, res) => {
     openTradeId++;
 
     OpenTrades.push({
-        userId: userId,
+        userId,
         orderId: openTradeId,
-        volume: volume,
-        margin: margin,
-        openPrice: openPrice, 
-        asset: asset,
-        type: type,
-        pnl: (currentAsset.sell - currentAsset.buy) * volume, 
-        takeProfit: takeProfit,
-        stopLoss: stopLoss
+        volume,
+        margin,
+        openPrice,
+        asset,
+        type,
+        pnl: (currentAsset.sell - currentAsset.buy) * volume,
+        takeProfit,
+        stopLoss
     })
 
     return res.json({
         orderId: openTradeId,
-        balance: user.balances.USD,
+        balance: user.balance,
         open_price: openPrice / Math.pow(10, currentAsset.decimal), 
         current_price: currentPrice / Math.pow(10, currentAsset.decimal),
-        margin: margin,
-        leverage: leverage,
-        type: type
+        margin,
+        leverage,
+        type
     })
-
 })
 
 
@@ -126,40 +147,46 @@ tradesRouter.post('/open', (req, res) => {
 // close order (buy/sell)
 tradesRouter.post("/close", async (req, res) => {
     console.log("POST: /api/close");
-    //console.log(req.body)
     const { orderId } = req.body
     const userId = req.userId
 
     const currentTrade = OpenTrades.find(t => t.orderId === orderId)
     const currentAsset = Assets.find(a => a.symbol === currentTrade?.asset)!
     const index = OpenTrades.findIndex(t => t.orderId === orderId);
-    const user = Users.find(u => u.id === userId)
 
-    console.log(user, currentTrade)
+    const result = await pool.query(
+        `SELECT id, balance, used_margin FROM users WHERE id = $1`,
+        [userId]
+    )
 
-    if(user) {
-        if (currentTrade && index !== -1) {
-            // pnl calculation using big integers
-            const currentPnl = 
-                currentTrade.type == "Buy" ?  
-                (currentAsset.sell - currentTrade.openPrice) * currentTrade.volume 
-                :
-                (currentTrade.openPrice - currentAsset.buy) * currentTrade.volume 
+    if (result.rows.length === 0) {
+        return res.status(401).json({ success: false, message: "error validating user" })
+    }
 
-            // convert to decimal when updating user balance
-            user.balances.USD += currentPnl / Math.pow(10, currentAsset.decimal)
-            user.usedMargin -= currentTrade.margin
+    const user = result.rows[0]
 
-            OpenTrades.splice(index, 1)
+    if (currentTrade && index !== -1) {
+        const currentPnl =
+            currentTrade.type === "Buy" 
+                ? (currentAsset.sell - currentTrade.openPrice) * currentTrade.volume 
+                : (currentTrade.openPrice - currentAsset.buy) * currentTrade.volume 
 
-            return res.json({
-                status: "success",
-                message: user?.balances.USD,
-            })
-        }
+        // update user balance + free margin in DB
+        await pool.query(
+            `UPDATE users SET 
+                balance = balance + $1,
+                used_margin = used_margin - $2
+             WHERE id = $3`,
+            [currentPnl / Math.pow(10, currentAsset.decimal), currentTrade.margin, userId]
+        )
+
+        OpenTrades.splice(index, 1)
+
         return res.json({
-            status: "failed",
-            message: "no trade"
+            success: true,
+            message: "trade closed"
         })
     }
+
+    return res.json({ success: false, message: "no trade" })
 })

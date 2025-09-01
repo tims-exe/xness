@@ -34,6 +34,6 @@ export interface UserType {
     id: string,
     email: string,
     password: string,
-    balances: Record<string, number>
+    balance: number
     usedMargin: number
 }
