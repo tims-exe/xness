@@ -10,6 +10,7 @@ await subscriber.connect()
 
 interface AssetData {
     symbol: string 
+    price: number
     buy: number
     sell: number 
     decimal : number
@@ -26,9 +27,9 @@ interface IncomingAssetData {
 }
 
 const Prices: AssetData[] = [
-  { symbol: "BTCUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
-  { symbol: "SOLUSDT", buy: 0, sell: 0, decimal: 0, status: "up"},
-  { symbol: "ETHUSDT", buy: 0, sell: 0, decimal: 0, status: "up" },
+  { symbol: "BTCUSDT", price: 0, buy: 0, sell: 0, decimal: 0, status: "up" },
+  { symbol: "SOLUSDT", price: 0, buy: 0, sell: 0, decimal: 0, status: "up"},
+  { symbol: "ETHUSDT", price: 0, buy: 0, sell: 0, decimal: 0, status: "up" },
 ];
 
 function updatePrice(newData: AssetData) {
@@ -69,6 +70,7 @@ wss.on("connection", async (ws) => {
             if (client.readyState === client.OPEN) {
             const newData: AssetData = {
                 symbol: parseData.asset,
+                price: parseData.price,
                 buy: parseData.buy,
                 sell: parseData.sell,
                 decimal: parseData.decimal,

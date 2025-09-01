@@ -14,6 +14,7 @@
 
 export interface AssetData {
     symbol: string 
+    price: number
     buy: number
     sell: number 
     decimal : number

@@ -21,6 +21,7 @@ interface TradeChartProps {
     allTimePeriods: TimePeriod[],
     selectedTimePeriod: string
 }
+
 const TradeChart = ({ 
     data, 
     timePeriod,
@@ -43,7 +44,7 @@ const TradeChart = ({
     const { assetMap } = useSocket()
     const currentAsset = assetMap.find(a => a.symbol === asset);
     const livePrice = currentAsset
-        ? currentAsset.buy / Math.pow(10, currentAsset.decimal)
+        ? currentAsset.price / Math.pow(10, currentAsset.decimal)
         : 0;
 
     // Get timeframe in milliseconds
@@ -157,23 +158,7 @@ const TradeChart = ({
             Math.floor(now / timeframeMs) * timeframeMs
         );
 
-        // Only skip if current bucket is actually older
-        if (currentBucket < (lastCandleRef.current.time as number)) {
-            return;
-        }
-
-        if (lastCandleRef.current.time !== currentBucket) {
-            // New candle - start a new timeframe period
-            const newCandle: CandlestickData = {
-                time: currentBucket,
-                open: livePrice,
-                high: livePrice,
-                low: livePrice,
-                close: livePrice,
-            };
-            lastCandleRef.current = newCandle;
-            seriesRef.current.update(newCandle);
-        } else {
+        if (lastCandleRef.current.time === currentBucket) {
             // Update existing candle within the same timeframe period
             const updatedCandle: CandlestickData = {
                 ...lastCandleRef.current,
@@ -183,7 +168,18 @@ const TradeChart = ({
             };
             lastCandleRef.current = updatedCandle;
             seriesRef.current.update(updatedCandle);
+        } else if (currentBucket > (lastCandleRef.current.time as number)) {
+            const newCandle: CandlestickData = {
+                time: currentBucket,
+                open: lastCandleRef.current.close, 
+                high: livePrice,
+                low: livePrice,
+                close: livePrice,
+            };
+            lastCandleRef.current = newCandle;
+            seriesRef.current.update(newCandle);
         }
+
     }, [livePrice, timePeriod, allTimePeriods]);
 
     // Reset last candle when time period changes
