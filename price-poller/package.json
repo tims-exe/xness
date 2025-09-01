@@ -25,5 +25,8 @@
     "pg-format": "^1.0.4",
     "redis": "^5.8.2",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
   }
 }

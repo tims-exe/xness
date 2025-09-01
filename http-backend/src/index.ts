@@ -72,6 +72,6 @@ app.get("/api/v1/candles", authMiddleware, async (req, res) => {
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/orders', authMiddleware, tradesRouter)
 
-app.listen(3000, () => {
+app.listen(5000, () => {
     console.log("http backend running")
 })

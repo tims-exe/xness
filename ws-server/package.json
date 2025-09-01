@@ -17,5 +17,8 @@
     "@types/ws": "^8.18.1",
     "redis": "^5.8.2",
     "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
   }
 }
