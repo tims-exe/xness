@@ -79,7 +79,6 @@ userRouter.post('/signin', async (req, res) => {
 
 
 userRouter.get('/balance', authMiddleware, async (req, res) => {
-    // console.log('params : ',req.params)
     const userId = req.userId
     console.log(`GET: /api/v1/user/balance/`)
 

@@ -7,10 +7,6 @@ export function useSocket() {
     const [socket, setSocket] = useState<WebSocket>();
     const [assetMap, setAssetMap] = useState<AssetData[]>([]);
 
-    // fetch initial assetmap data
-    // from http backend
-    // GET: /api/v1/assets 
-
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:8080');
 
@@ -22,8 +18,6 @@ export function useSocket() {
         }
         ws.onmessage = (event) => {
             const assetData: AssetData[] = JSON.parse(event.data);
-
-            // console.log('data: ', assetData)
 
             setAssetMap(assetData)
         };

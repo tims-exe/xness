@@ -21,7 +21,6 @@ const ChartView = ({asset} : {asset : string}) => {
     // get trade history (chart)
     useEffect(() => {
         const fetchTrades = async () => {
-            //console.log(asset, selectedTimePeriod)
             const response = await axios.get(
                 `${BACKEND_URL}/api/v1/candles?asset=${asset}&ts=${selectedTimePeriod}`, {
                 headers : {
@@ -30,7 +29,6 @@ const ChartView = ({asset} : {asset : string}) => {
             }
             );
 
-            //console.log(response.data)
             setTrades(response.data || []); 
             //console.log(response.data)
         };

@@ -1,17 +1,3 @@
-// export interface AssetData {
-//     timestamp: string
-//     asset: string 
-//     price: number
-//     ask: number 
-//     bid: number
-// }
-// export interface AssetData {
-//     price: number
-//     ask: number 
-//     bid: number
-// }
-
-
 export interface AssetData {
     symbol: string 
     price: number
@@ -20,17 +6,6 @@ export interface AssetData {
     decimal : number
     status: "up" | "down"
 }
-
-
-// export interface TradeData {
-//     timestamp: string
-//     asset: string
-//     open_price: number
-//     close_price: number
-//     high_price: number
-//     low_price: number 
-//     volume: string
-// }
 
 export interface TradeData {
     timestamp: number

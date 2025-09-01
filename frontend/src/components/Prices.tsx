@@ -7,7 +7,6 @@ interface PriceProps {
 }
 
 const Prices = ({ assetMap, changeAsset }: PriceProps) => {
-  // const assetEntries = Object.entries(assetMap); 
   
   function handleAssetClick(asset: string) {
     changeAsset(asset);
@@ -33,19 +32,6 @@ const Prices = ({ assetMap, changeAsset }: PriceProps) => {
           </button>
         ))
       }
-      {/* {assetEntries.length ? (
-        assetEntries.map(([assetName, assetData]) => (
-          <button
-            key={assetName}
-            onClick={() => handleAssetClick(assetName)}
-            className="hover:cursor-pointer w-full hover:shadow-lg rounded-2xl mt-5 transition-shadow duration-300"
-          >
-            <AssetCard asset={assetName} data={assetData} />
-          </button>
-        ))
-      ) : (
-        <p>no assets</p>
-      )} */}
     </div>
   );
 };

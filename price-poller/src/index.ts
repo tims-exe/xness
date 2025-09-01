@@ -6,8 +6,7 @@ import { createClient } from "redis";
 
 dotenv.config();
 
-const url =
-  "wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethusdt@aggTrade/solusdt@aggTrade";
+const url = process.env.BINANCE_API!
 
 const batch_size = 100;
 let batch: [string, string, number, number, number][] = [];
@@ -71,20 +70,14 @@ ws.on("open", () => {
 ws.on("message", async (event) => {
   const data = JSON.parse(event.toString());
 
-  // console.log(data)
-
   const ts = new Date(data.data.T).toISOString().replace("T", " ").replace("Z", "");
 
   const { whole: priceWhole, decimal } = formatPrice(data.data.p);
 
   const { buy, sell } = formatBuySell(priceWhole, decimal, spread);
 
-  // const { whole: qtyWhole, decimal: qtyDecimal } = formatPrice();
-
   batch.push([ts, data.data.s, priceWhole, decimal, data.data.q]);
 
-
-  // TODO : UPDATE DB COLS TO HAVE NEW INT VALUES AND DECIMAL COL
   if (batch.length >= batch_size) {
     const query = format(
       "INSERT INTO trades (time, asset, price, decimals, quantity) VALUES %L",
@@ -97,7 +90,7 @@ ws.on("message", async (event) => {
     batch = [];
   }
 
-  // Publish to Redis
+  // publish to Redis
   await redis.publish(
     "trades",
     JSON.stringify({

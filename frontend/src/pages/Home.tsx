@@ -38,7 +38,6 @@ const Home = () => {
 
   // get user balance 
   useEffect(() => {
-    // Only fetch data if user is verified
     if (isVerified !== true) return;
 
     const fetchData = async () => {
@@ -56,7 +55,6 @@ const Home = () => {
         setOriginalBalance(Number(response_balance.data.balance));
       } catch (error) {
         console.error('Failed to fetch balance:', error);
-        // If balance fetch fails due to auth, redirect to signin
         navigate('/signin');
       }
     };
@@ -85,7 +83,6 @@ const Home = () => {
             return trade;
           }
 
-          // Use the prices as received from backend (already converted to decimals)
           const currentPrice = trade.type === "Buy" 
             ? currentAsset.sell / Math.pow(10, currentAsset.decimal)
             : currentAsset.buy / Math.pow(10, currentAsset.decimal);
@@ -94,7 +91,6 @@ const Home = () => {
             ? (currentPrice - trade.open_price) * trade.volume
             : (trade.open_price - currentPrice) * trade.volume;
 
-          //console.log(currentPrice, trade.open_price, current_pnl)
           return {
             ...trade,
             current_price: currentPrice,
@@ -114,7 +110,6 @@ const Home = () => {
 
   // fetch current open trades
   useEffect(() => {
-    // Only fetch trades if user is verified
     if (isVerified !== true) return;
 
     const fetchActiveTrades = async () => {
@@ -140,7 +135,6 @@ const Home = () => {
         }
       } catch (error) {
         console.error('Failed to fetch active trades:', error);
-        // If trades fetch fails due to auth, redirect to signin
         navigate('/signin');
       }
     };
@@ -257,12 +251,10 @@ const Home = () => {
       });
     } catch (error) {
       console.error('Failed to close order:', error);
-      // If close order fails due to auth, redirect to signin
       navigate('/signin');
     }
   };
 
-  // Show loading spinner while verifying
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -271,7 +263,6 @@ const Home = () => {
     );
   }
 
-  // Don't render anything if not verified (user will be redirected)
   if (isVerified === false) {
     return null;
   }

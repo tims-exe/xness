@@ -8,7 +8,6 @@ const ActiveTrades = ({ trades, closeOrder }: {
     <div className="mt-5 mx-5">
       {trades.length > 0 ? (
         <div>
-          {/* Header row */}
           <div className="w-full rounded-xl px-5 flex mb-2 font-semibold">
             <p className="flex-1">Asset</p>
             <p className="flex-1">Type</p>

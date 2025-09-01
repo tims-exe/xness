@@ -47,7 +47,6 @@ const TradeChart = ({
         ? currentAsset.price / Math.pow(10, currentAsset.decimal)
         : 0;
 
-    // Get timeframe in milliseconds
     const getTimeframeMs = (period: string): number => {
         const timePeriod = allTimePeriods.find(tp => tp.value === period);
         return timePeriod ? timePeriod.ms : 60000; 

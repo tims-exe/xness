@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const STREAM_KEY = "trades_stream";
+const STREAM_KEY = process.env.REDIS_STREAM!
 const TRIM_MAX_LEN = 1000;
 
 type RedisStreamMsg = {

@@ -52,8 +52,6 @@ wss.on("connection", async (ws) => {
         ws.send(`ECHO: ${message}`)
     })
     
-    // message from pubsub : {"timestamp":"2025-08-30 09:15:34.969","asset":"BTCUSDT","price":108500,"ask":109856.25,"bid":107143.75}
-
     await subscriber.subscribe("trades", (message) => {
         const parseData: IncomingAssetData = JSON.parse(message)
 
@@ -78,7 +76,6 @@ wss.on("connection", async (ws) => {
             }
             updatePrice(newData)
 
-            //console.log(Prices)
             client.send(
                 JSON.stringify(Prices)
             )

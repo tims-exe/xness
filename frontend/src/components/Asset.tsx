@@ -1,25 +1,15 @@
 import { useEffect, useState } from "react"
 import type { AssetData } from "../types/main-types"
 
-// interface AssetCardProps {
-//   asset: string;
-//   data: AssetData;
-// }
-
 const AssetCard = ({ asset }: {asset: AssetData}) => {
   const [ask, setAsk] = useState<number>();
   const [bid, setBid] = useState<number>();
-  // const [askColor, setAskColor] = useState<string>("bg-green-300");
-  // const [bidColor, setBidColor] = useState<string>("bg-green-300");
   const [statusColour, setStatusColour] = useState<string>("bg-green-300");
 
   useEffect(() => {
-    // const spread = 0.025;
-    // const halfSpread = spread / 2;
 
-
-    const currentAsk = (asset.buy / Math.pow(10, asset.decimal)) // * (1 + halfSpread);
-    const currentBid = (asset.sell / Math.pow(10, asset.decimal)) // * (1 - halfSpread);
+    const currentAsk = (asset.buy / Math.pow(10, asset.decimal)) 
+    const currentBid = (asset.sell / Math.pow(10, asset.decimal)) 
 
     if (asset.status === "up") {
       setStatusColour("bg-green-300")
@@ -27,14 +17,6 @@ const AssetCard = ({ asset }: {asset: AssetData}) => {
     else {
       setStatusColour("bg-red-300")
     }
-
-    // if (prevAsk !== undefined) {
-    //   setAskColor(currentAsk > prevAsk ? "bg-green-300" : "bg-red-300");
-    // }
-
-    // if (prevBid !== undefined) {
-    //   setBidColor(currentBid > prevBid ? "bg-green-300" : "bg-red-300");
-    // }
 
     setAsk(currentAsk);
     setBid(currentBid);

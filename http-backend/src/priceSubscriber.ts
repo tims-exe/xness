@@ -49,7 +49,6 @@ export class PriceSubscriber {
     private async processOpenTrades(latestTrade: IncomingAssetData) {
         for (let i = OpenTrades.length - 1; i >= 0; i--) {
             const trade = OpenTrades[i]
-            // const user = Users.find(u => u.id === trade.userId)
 
             const result = await pool.query(
                 `SELECT * FROM users WHERE id = $1`
