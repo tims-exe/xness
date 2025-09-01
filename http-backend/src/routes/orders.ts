@@ -35,7 +35,9 @@ tradesRouter.get("/get-orders", async (req, res) => {
     const user = result.rows[0]
 
   if (OpenTrades.length > 0) {
-    const activeTrades = OpenTrades.map((trade) => {
+    const userTrades = OpenTrades.filter(trade => trade.userId === userId);
+
+    const activeTrades = userTrades.map((trade) => {
         const assetData = Assets.find(a => a.symbol === trade.asset)!
         
         // pnl calculation using big integers
@@ -216,9 +218,7 @@ function createEmail(asset: string, type: "Buy" | "Sell", volume: number, openPr
         <li><strong>Leverage:</strong> ${leverage}x</li>
         <li><strong>Margin Used:</strong> ${margin}</li>
         </ul>
-        <br/>
-        <p>— xness</p>
-    `
+        `
 
     return emailBody
 }

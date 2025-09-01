@@ -72,8 +72,12 @@ async function startEmailWorker() {
           const { recipient, subject, body } = entry.message;
 
           if (recipient && subject && body) {
-            await sendEmail(recipient, subject, body)
-            console.log(`sending email to ${recipient}`)
+            try {
+                await sendEmail(recipient, subject, body)
+                console.log(`sending email to ${recipient}`)
+            } catch (error) {
+                console.log(error)
+            }
           }
 
           lastId = entry.id;
