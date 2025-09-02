@@ -3,7 +3,12 @@ import {createClient} from 'redis'
 
 const wss = new WebSocketServer({port: 8080})
 
-const subscriber = createClient()
+const subscriber = createClient({
+    socket: {
+        host: "redis",
+        port: 6379
+    }
+})
 
 await subscriber.connect()
 

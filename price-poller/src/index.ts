@@ -24,7 +24,10 @@ const client = new Client({
 });
 
 const redis = createClient({
-  url: "redis://localhost:6379",
+  socket: {
+    host: "redis",
+    port: 6379
+  }
 });
 
 async function startServer() {
