@@ -16,7 +16,7 @@ const spread = 0.01; // 1%
 const halfSpread = spread / 2;
 
 const client = new Client({
-  host: "localhost",
+  host: 'localhost',
   port: 5432,
   user: "postgres",
   password: process.env.DB_PASSWORD,
@@ -25,7 +25,7 @@ const client = new Client({
 
 const redis = createClient({
   socket: {
-    host: "redis",
+    host: "localhost",
     port: 6379
   }
 });
