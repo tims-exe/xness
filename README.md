@@ -1,6 +1,6 @@
 # XNESS
 
-A high-performance CFD trading platform built with microservices architecture that enables real-time trading simulation on real-world assets. XNESS replicates core trading mechanics including margin-based liquidation, stop-loss, and take-profit logic, delivering a realistic trading experience through simulated execution without requiring direct market integration.
+A CFD trading platform built with microservices architecture that enables real-time trading simulation on real-world assets. XNESS replicates core trading mechanics including margin-based liquidation, stop-loss, and take-profit logic, delivering a realistic trading experience through simulated execution without requiring direct market integration.
 
 ## Key Features
 
