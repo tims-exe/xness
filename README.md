@@ -66,18 +66,15 @@ The architecture ensures zero-latency trading operations by maintaining live pri
 ## Tech Stack
 
 ### Backend Services
-- **Node.js** with **Express.js** - RESTful API development
-- **TypeScript** - Type-safe application development
+- **Express and Typescript** - API development
 - **WebSocket** - Real-time bidirectional communication
 - **Redis** - Pub/sub messaging and stream processing
 
 ### Frontend
-- **React** - Modern component-based UI framework
-- **TypeScript** - Enhanced development experience with static typing
+- **React and Typescript** - Modern component-based UI framework
 
 ### Database & Storage
 - **TimescaleDB** - Time-series data optimization for price storage
-- **Redis** - In-memory data structure store for caching and messaging
 
 ### External Integrations
 - **Binance WebSocket API** - Real-time market data source
