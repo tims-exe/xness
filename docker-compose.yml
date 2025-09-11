@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  price-poller:
+    build: ./price-poller
+    image: xness-price-poller:latest
+    container_name: xness-price-poller
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - BINANCE_API=wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethusdt@aggTrade/solusdt@aggTrade
+      - DB_HOST=timescaledb     
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=xness
+    depends_on:
+      - redis
+      - timescaledb
+    restart: always 
+
+  ws-server:
+    build: ./ws-server
+    image: xness-ws-server:latest
+    container_name: xness-ws-server
+    environment:
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+    restart: always 
+
+  http-backend:
+    build: ./http-backend
+    image: xness-http-backend:latest
+    container_name: xness-http-backend
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=testing
+      - DB_HOST=timescaledb     
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=xness
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - timescaledb
+    restart: always 
+
+  frontend:
+    build: ./frontend
+    image: xness-frontend:latest
+    container_name: xness-frontend
+    environment:
+      - VITE_BACKEND_URL=http://localhost:5000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - http-backend
+      - ws-server
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: redis-xness 
+    ports:
+      - "6379:6379" 
+    volumes:
+      - redis-data:/data 
+    restart: always
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb-xness
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=xness
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  redis-data:
+  timescale-data:

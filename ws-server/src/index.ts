@@ -4,11 +4,9 @@ import {createClient} from 'redis'
 const wss = new WebSocketServer({port: 8080})
 
 const subscriber = createClient({
-    socket: {
-        host: "redis",
-        port: 6379
-    }
-})
+  url: process.env.REDIS_URL || "redis://localhost:6379"
+});
+
 
 await subscriber.connect()
 

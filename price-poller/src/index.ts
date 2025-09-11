@@ -12,28 +12,34 @@ const batch_size = 100;
 let batch: [string, string, number, number, number][] = [];
 let batch_count = 1;
 
-const spread = 0.01; // 1%
+const spread = 0.01;
 const halfSpread = spread / 2;
 
+// const client = new Client({
+//   host: 'localhost',
+//   port: 5432,
+//   user: "postgres",
+//   password: process.env.DB_PASSWORD,
+//   database: "xness",
+// });
+
 const client = new Client({
-  host: 'localhost',
-  port: 5432,
-  user: "postgres",
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: "xness",
+  database: process.env.DB_NAME,
 });
 
+
 const redis = createClient({
-  socket: {
-    host: "localhost",
-    port: 6379
-  }
+  url: process.env.REDIS_URL || "redis://localhost:6379"
 });
 
 async function startServer() {
   await redis.connect();
   console.log("redis connected");
-  console.log("ws server running");
+  // console.log("ws server running");
 }
 
 startServer().catch(console.error);
