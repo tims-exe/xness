@@ -1,9 +1,6 @@
-version: '3.8'
-
 services:
   price-poller:
-    build: ./price-poller
-    image: xness-price-poller:latest
+    image: timzss/xness-price-poller:latest
     container_name: xness-price-poller
     environment:
       - REDIS_URL=redis://redis:6379
@@ -19,8 +16,7 @@ services:
     restart: always 
 
   ws-server:
-    build: ./ws-server
-    image: xness-ws-server:latest
+    image: timzss/xness-ws-server:latest
     container_name: xness-ws-server
     environment:
       - REDIS_URL=redis://redis:6379
@@ -31,8 +27,7 @@ services:
     restart: always 
 
   http-backend:
-    build: ./http-backend
-    image: xness-http-backend:latest
+    image: timzss/xness-http-backend:latest
     container_name: xness-http-backend
     environment:
       - REDIS_URL=redis://redis:6379
@@ -48,19 +43,6 @@ services:
       - redis
       - timescaledb
     restart: always 
-
-  frontend:
-    build: ./frontend
-    image: xness-frontend:latest
-    container_name: xness-frontend
-    environment:
-      - VITE_BACKEND_URL=http://localhost:5000
-    ports:
-      - "3000:3000"
-    depends_on:
-      - http-backend
-      - ws-server
-    restart: always
 
   redis:
     image: redis:latest
@@ -87,3 +69,4 @@ services:
 volumes:
   redis-data:
   timescale-data:
+  

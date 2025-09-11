@@ -94,7 +94,7 @@ ws.on("message", async (event) => {
     );
     await client.query(query);
 
-    console.log("Inserted batch:", batch_count);
+    // console.log("Inserted batch:", batch_count);
     batch_count++;
     batch = [];
   }

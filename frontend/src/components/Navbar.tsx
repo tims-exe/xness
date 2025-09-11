@@ -1,10 +1,18 @@
-const Navbar = ({balance} : { balance:number }) => {
+const Navbar = ({ balance }: { balance: number }) => {
   return (
     <div>
       <div className="py-5 flex items-center justify-between px-8">
-        <p className="text-3xl font-bold">
-          xness
-        </p>
+        <div className="flex items-center space-x-3">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-8 h-8 object-contain"
+          />
+          <p className="text-3xl font-bold">
+            xness
+          </p>
+        </div>
+
         <div className="font-semibold text-xl bg-neutral-400 rounded-md py-2 px-3">
           {balance.toFixed(2)}
         </div>
