@@ -6,9 +6,10 @@ export function useSocket() {
     const [loading, setLoading] = useState(true)
     const [socket, setSocket] = useState<WebSocket>();
     const [assetMap, setAssetMap] = useState<AssetData[]>([]);
+    const WS_URL = import.meta.env.VITE_WS_URL;
 
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:8080');
+        const ws = new WebSocket(WS_URL);
 
         ws.onopen = () => {
             console.log("Websocket Open");
