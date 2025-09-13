@@ -1,4 +1,16 @@
 services:
+  frontend:
+    image: timzss/xness-frontend:latest
+    container_name: xness-frontend
+    environment:
+      - VITE_BACKEND_URL=http://localhost:5000
+      - VITE_WS_URL=ws://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - http-backend
+      - ws-server
+    restart: always
   price-poller:
     image: timzss/xness-price-poller:latest
     container_name: xness-price-poller
