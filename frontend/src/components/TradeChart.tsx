@@ -11,7 +11,7 @@ import {
 } from 'lightweight-charts';
 import type { ChartColors, TimePeriod } from '../types/main-types';
 
-import { useSocket } from '../hooks/useSocket';
+// import { useSocket } from '../hooks/useSocket';
 
 interface TradeChartProps {
     data: CandlestickData[];
@@ -24,8 +24,8 @@ interface TradeChartProps {
 
 const TradeChart = ({ 
     data, 
-    timePeriod,
-    allTimePeriods,
+    // timePeriod,
+    // allTimePeriods,
     colors: {
         backgroundColor = '#ffffff',
         textColor = '#333',
@@ -34,28 +34,26 @@ const TradeChart = ({
         wickUpColor = '#26a69a',
         wickDownColor = '#ef5350',
     } = {},
-    asset,
+    // asset,
 }: TradeChartProps) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
     const lastCandleRef = useRef<CandlestickData | null>(null);
 
-    const { assetMap } = useSocket()
-    const currentAsset = assetMap.find(a => a.symbol === asset);
-    const livePrice = currentAsset
-        ? currentAsset.price / Math.pow(10, currentAsset.decimal)
-        : 0;
+    // const { assetMap } = useSocket()
+    // const currentAsset = assetMap.find(a => a.symbol === asset);
+    // const livePrice = currentAsset ? currentAsset.price / Math.pow(10, currentAsset.decimal) : 0;
 
-    const getTimeframeMs = (period: string): number => {
-        const timePeriod = allTimePeriods.find(tp => tp.value === period);
-        return timePeriod ? timePeriod.ms : 60000; 
-    };
+    // const getTimeframeMs = (period: string): number => {
+    //     const timePeriod = allTimePeriods.find(tp => tp.value === period);
+    //     return timePeriod ? timePeriod.ms : 60000; 
+    // };
 
-    // Convert timestamp to UTCTimestamp
-    const toUTCTimestamp = (timestamp: number): UTCTimestamp => {
-        return Math.floor(timestamp / 1000) as UTCTimestamp;
-    };
+    // // Convert timestamp to UTCTimestamp
+    // const toUTCTimestamp = (timestamp: number): UTCTimestamp => {
+    //     return Math.floor(timestamp / 1000) as UTCTimestamp;
+    // };
 
     useEffect(() => {
         if (!chartContainerRef.current) return;
@@ -145,46 +143,46 @@ const TradeChart = ({
     }, [data]);
 
     // Handle live price updates
-    useEffect(() => {
-        if (!seriesRef.current || !livePrice || livePrice <= 0) return;
-        if (!lastCandleRef.current) return; 
+    // useEffect(() => {
+    //     if (!seriesRef.current || !livePrice || livePrice <= 0) return;
+    //     if (!lastCandleRef.current) return; 
 
-        const timeframeMs = getTimeframeMs(timePeriod);
-        const now = Date.now();
+    //     const timeframeMs = getTimeframeMs(timePeriod);
+    //     const now = Date.now();
         
-        // Calculate current bucket timestamp based on timeframe
-        const currentBucket = toUTCTimestamp(
-            Math.floor(now / timeframeMs) * timeframeMs
-        );
+    //     // Calculate current bucket timestamp based on timeframe
+    //     const currentBucket = toUTCTimestamp(
+    //         Math.floor(now / timeframeMs) * timeframeMs
+    //     );
 
-        if (lastCandleRef.current.time === currentBucket) {
-            // Update existing candle within the same timeframe period
-            const updatedCandle: CandlestickData = {
-                ...lastCandleRef.current,
-                close: livePrice,
-                high: Math.max(lastCandleRef.current.high, livePrice),
-                low: Math.min(lastCandleRef.current.low, livePrice),
-            };
-            lastCandleRef.current = updatedCandle;
-            seriesRef.current.update(updatedCandle);
-        } else if (currentBucket > (lastCandleRef.current.time as number)) {
-            const newCandle: CandlestickData = {
-                time: currentBucket,
-                open: lastCandleRef.current.close, 
-                high: livePrice,
-                low: livePrice,
-                close: livePrice,
-            };
-            lastCandleRef.current = newCandle;
-            seriesRef.current.update(newCandle);
-        }
+    //     if (lastCandleRef.current.time === currentBucket) {
+    //         // Update existing candle within the same timeframe period
+    //         const updatedCandle: CandlestickData = {
+    //             ...lastCandleRef.current,
+    //             close: livePrice,
+    //             high: Math.max(lastCandleRef.current.high, livePrice),
+    //             low: Math.min(lastCandleRef.current.low, livePrice),
+    //         };
+    //         lastCandleRef.current = updatedCandle;
+    //         seriesRef.current.update(updatedCandle);
+    //     } else if (currentBucket > (lastCandleRef.current.time as number)) {
+    //         const newCandle: CandlestickData = {
+    //             time: currentBucket,
+    //             open: lastCandleRef.current.close, 
+    //             high: livePrice,
+    //             low: livePrice,
+    //             close: livePrice,
+    //         };
+    //         lastCandleRef.current = newCandle;
+    //         seriesRef.current.update(newCandle);
+    //     }
 
-    }, [livePrice, timePeriod, allTimePeriods]);
+    // }, [livePrice, timePeriod, allTimePeriods]);
 
-    // Reset last candle when time period changes
-    useEffect(() => {
-        lastCandleRef.current = null;
-    }, [timePeriod]);
+    // // Reset last candle when time period changes
+    // useEffect(() => {
+    //     lastCandleRef.current = null;
+    // }, [timePeriod]);
 
     return <div ref={chartContainerRef} style={{ width: '100%', height: '350px' }} />;
 };
